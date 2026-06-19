@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import uploadRoutes from './routes/upload.js';
 import billRoutes from './routes/billRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Bill Organizer API is running' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/bills', billRoutes);
 

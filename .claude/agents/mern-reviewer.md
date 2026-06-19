@@ -14,11 +14,12 @@ You are an expert MERN stack code reviewer specializing in the Bill Organizer pr
 |-------|---------|---------------|
 | Frontend | Vite + React-TS | `index.html` at root, NOT in `public/`. `import.meta.env` NOT `process.env` |
 | Backend | Express 4.x | 4-arg `(err,req,res,next)` error handler. `express.json()` built-in (no body-parser) |
-| Database | Mongoose 8.x | No `useNewUrlParser`/`useUnifiedTopology` (removed in v6) |
+| Database | Mongoose 8.x | No `useNewUrlParser`/`useUnifiedTopology` (removed in v6). All queries scoped to `userId` |
 | File upload | multer | `memoryStorage()` for Buffer access. File on `req.file.buffer` |
 | Image storage | cloudinary | `upload_stream()` NOT `upload()` for Buffers. Wrap in Promise (returns a stream) |
-| OCR | @google-cloud/vision | `documentTextDetection()` NOT `textDetection()`. Service account NOT API key |
-| AI | @google/genai | Model `gemini-2.5-flash`. `config.systemInstruction` NOT top-level |
+| OCR | tesseract.js | `createScheduler()` + worker pool. NOT single `createWorker()`. NOT `@google-cloud/vision` |
+| AI | cohere-ai | Model `command-a-plus-05-2026`. Use `CohereClientV2`. `response_format` with schema. Find text block by `.type === 'text'` |
+| Auth | jsonwebtoken + bcryptjs | JWT in `Authorization: Bearer <token>`. `req.userId` from auth middleware |
 
 ## Anti-Patterns to Find (with grep commands)
 
@@ -32,44 +33,52 @@ You are an expert MERN stack code reviewer specializing in the Bill Organizer pr
    `grep -rn "cloudinary\.uploader\.upload\s*(" <files>`
    → FIX: Use `upload_stream()` wrapped in Promise for Buffer uploads. `upload()` expects file path or URL.
 
-3. **Cloudinary `export const v2` (ESM import)**
-   `grep -rn "cloudinary\.uploader\.upload_stream" <files>`
-   → Must also check that the import is `import { v2 as cloudinary } from 'cloudinary'` not `import cloudinary from 'cloudinary'`
+3. **Cloudinary wrong import**
+   `grep -rn "from 'cloudinary'" <files> | grep -v "v2 as"`
+   → Must be `import { v2 as cloudinary } from 'cloudinary'` not `import cloudinary from 'cloudinary'`
 
-4. **Gemini wrong model name**
-   `grep -rn "gemini-pro\b" <files>`
-   → FIX: Use `gemini-2.5-flash`
+4. **Cohere wrong client version**
+   `grep -rn "from 'cohere-ai'" <files> | grep -v "CohereClientV2"`
+   → FIX: Use `CohereClientV2` not `CohereClient` (v1)
+
+5. **Google Cloud Vision import (should NOT exist)**
+   `grep -rn "@google-cloud/vision" <files>`
+   → FIX: Remove — the project uses Tesseract.js. Delete any Google Vision imports and credentials.
 
 ### Will cause subtle bugs
 
-5. **MongoDB `localhost`**
+6. **MongoDB `localhost`**
    `grep -rn "localhost:27017" <files>`
    → FIX: Use `127.0.0.1:27017`
 
-6. **`textDetection` instead of `documentTextDetection`**
-   `grep -rn "textDetection" server/src/utils/`
-   → FIX: Use `documentTextDetection` for bills
+7. **Tesseract single worker instead of scheduler**
+   `grep -rn "worker\.recognize\|createWorker" server/src/utils/ocrService.js | grep -v "scheduler\|createScheduler"`
+   → FIX: Use `createScheduler()` with worker pool. Single worker serializes concurrent uploads → timeout.
 
-7. **System instruction at wrong level**
-   `grep -rn "systemInstruction" <files>`
-   → Must be inside `config: { ... }`, not top level
+8. **Cohere system role in messages**
+   `grep -rn "role.*system" <files>`
+   → Cohere v2 only supports `user`/`assistant`. Fold system prompt into user content.
 
-8. **`new: true` in findByIdAndUpdate**
-   `grep -rn "new: true" <files>`
-   → FIX: Use `returnDocument: 'after'`
+9. **Cohere assuming content[0].text**
+   `grep -rn "content\[0\]\.text" <files>`
+   → Cohere may wrap in thinking blocks. Find by `.type === 'text'` instead.
 
-9. **Vision API key auth**
-   `grep -rn "apiKey" <files that create Vision client>`
-   → FIX: Use `credentials: { client_email, private_key }` service account
+10. **`new: true` in findByIdAndUpdate**
+    `grep -rn "new: true" <files>`
+    → FIX: Use `returnDocument: 'after'`
 
-10. **Cloudinary config missing or wrong import**
-    `grep -rn "cloudinary\.config" <files>`
-    → Must set `cloud_name`, `api_key`, `api_secret`, `secure: true` from env vars before any upload
+11. **Missing userId filter on bill queries**
+    `grep -rn "Bill\.find\|Bill\.aggregate" <files> | grep -v "userId"`
+    → All bill queries must filter by `userId`. Unscoped queries leak data across users.
+
+12. **Missing pipeline validation**
+    `grep -rn "UNRECOGNIZED_BILL\|!amount\|amount <= 0\|Unknown Bill" server/src/controllers/billController.js`
+    → Bills with amount=0 or Unknown title must be rejected with 422 + Cloudinary cleanup.
 
 ### Missing error handling
 
-11. **Unwrapped async calls**
-    Check: every `await mongoose.connect()`, `upload_stream()` (wrapped in Promise), Vision/Gemini API calls must be in try/catch
+13. **Unwrapped async calls**
+    Check: every `await mongoose.connect()`, `upload_stream()` (wrapped in Promise), Tesseract/Cohere API calls must be in try/catch
 
 ## Review Procedure
 

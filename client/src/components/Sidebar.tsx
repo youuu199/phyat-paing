@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 interface MonthEntry {
   year: number;
   month: number;
@@ -10,6 +12,8 @@ interface SidebarProps {
   selectedYear: number | null;
   selectedMonth: number | null;
   onSelectDate: (year: number | null, month: number | null) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const MONTH_ABBR = [
@@ -22,7 +26,39 @@ export default function Sidebar({
   selectedYear,
   selectedMonth,
   onSelectDate,
+  isOpen,
+  onClose,
 }: SidebarProps) {
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  // Trap focus and restore on close
+  useEffect(() => {
+    if (!isOpen) return;
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const prevFocused = document.activeElement as HTMLElement | null;
+
+    // Focus the close button when sidebar opens
+    const closeBtn = sidebar.querySelector('.sidebar__close') as HTMLElement | null;
+    closeBtn?.focus();
+
+    return () => {
+      prevFocused?.focus();
+    };
+  }, [isOpen]);
+
   // Group months by year
   const grouped = months.reduce<Record<number, MonthEntry[]>>((acc, m) => {
     if (!acc[m.year]) acc[m.year] = [];
@@ -36,57 +72,100 @@ export default function Sidebar({
 
   const isAllTime = selectedYear === null;
 
-  return (
-    <aside className="sidebar">
-      <h3 className="sidebar__title">📅 Date Filter</h3>
+  const handleSelect = (year: number | null, month: number | null) => {
+    onSelectDate(year, month);
+    // On mobile, close sidebar after selection
+    if (window.innerWidth <= 640) {
+      onClose();
+    }
+  };
 
-      {/* All Time — clear filter */}
+  const sidebarContent = (
+    <>
+      <div className="sidebar__header">
+        <h3 className="sidebar__title">📅 Date Filter</h3>
+        <button
+          className="sidebar__close"
+          onClick={onClose}
+          aria-label="Close date filter sidebar"
+        >
+          ✕
+        </button>
+      </div>
+
       <button
         className={`sidebar__item sidebar__item--all${isAllTime ? ' sidebar__item--active' : ''}`}
-        onClick={() => onSelectDate(null, null)}
+        onClick={() => handleSelect(null, null)}
+        aria-pressed={isAllTime}
       >
         <span>All Time</span>
       </button>
 
       {years.length === 0 && (
-        <p className="sidebar__empty">No bills yet</p>
+        <p className="sidebar__empty">No bills yet — upload one to get started!</p>
       )}
 
-      {years.map((year) => {
-        const yearMonths = grouped[year].sort((a, b) => b.month - a.month);
-        const isYearActive = selectedYear === year && selectedMonth === null;
-        const totalInYear = yearMonths.reduce((sum, m) => sum + m.count, 0);
+      <nav aria-label="Browse bills by year and month">
+        {years.map((year) => {
+          const yearMonths = grouped[year].sort((a, b) => b.month - a.month);
+          const isYearActive = selectedYear === year && selectedMonth === null;
+          const totalInYear = yearMonths.reduce((sum, m) => sum + m.count, 0);
 
-        return (
-          <div key={year} className="sidebar__year-group">
-            {/* Year header — click to filter by whole year */}
-            <button
-              className={`sidebar__item sidebar__item--year${isYearActive ? ' sidebar__item--active' : ''}`}
-              onClick={() => onSelectDate(year, null)}
-            >
-              <span className="sidebar__year-label">{year}</span>
-              <span className="sidebar__count">{totalInYear}</span>
-            </button>
+          return (
+            <div key={year} className="sidebar__year-group">
+              <button
+                className={`sidebar__item sidebar__item--year${isYearActive ? ' sidebar__item--active' : ''}`}
+                onClick={() => handleSelect(year, null)}
+                aria-pressed={isYearActive}
+                aria-expanded={selectedYear === year}
+              >
+                <span>{year}</span>
+                <span className="sidebar__count" aria-label={`${totalInYear} bills`}>
+                  {totalInYear}
+                </span>
+              </button>
 
-            {/* Months under this year */}
-            <div className="sidebar__months">
-              {yearMonths.map((m) => {
-                const isMonthActive = selectedYear === year && selectedMonth === m.month;
-                return (
-                  <button
-                    key={`${year}-${m.month}`}
-                    className={`sidebar__item sidebar__item--month${isMonthActive ? ' sidebar__item--active' : ''}`}
-                    onClick={() => onSelectDate(year, m.month)}
-                  >
-                    <span>{MONTH_ABBR[m.month - 1]}</span>
-                    <span className="sidebar__count">{m.count}</span>
-                  </button>
-                );
-              })}
+              <div className="sidebar__months" role="group" aria-label={`Months in ${year}`}>
+                {yearMonths.map((m) => {
+                  const isMonthActive = selectedYear === year && selectedMonth === m.month;
+                  return (
+                    <button
+                      key={`${year}-${m.month}`}
+                      className={`sidebar__item sidebar__item--month${isMonthActive ? ' sidebar__item--active' : ''}`}
+                      onClick={() => handleSelect(year, m.month)}
+                      aria-pressed={isMonthActive}
+                    >
+                      <span>{MONTH_ABBR[m.month - 1]}</span>
+                      <span className="sidebar__count" aria-label={`${m.count} bills`}>
+                        {m.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </aside>
+          );
+        })}
+      </nav>
+    </>
+  );
+
+  return (
+    <>
+      {/* Overlay (mobile only) */}
+      <div
+        className={`sidebar__overlay${isOpen ? ' sidebar__overlay--visible' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <aside
+        ref={sidebarRef}
+        className={`sidebar${isOpen ? ' sidebar--open' : ''}`}
+        aria-label="Date filter"
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

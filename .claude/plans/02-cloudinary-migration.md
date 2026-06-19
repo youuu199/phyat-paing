@@ -37,37 +37,49 @@
   - Returns `{ url: secure_url, publicId: public_id }`
 
 ### 2.2 Updated Models
-- [x] `server/src/models/Bill.js` — added `cloudinaryPublicId: { type: String, default: '' }`
+- [x] `server/src/models/Bill.js` — added `cloudinaryPublicId: { type: String, default: '' }`, updated comment
 
 ### 2.3 Updated Controller
 - [x] `server/src/controllers/billController.js`
   - `createBill`: uses `uploadToCloudinary()` → saves `{ imageUrl: result.url, cloudinaryPublicId: result.publicId }`
   - `deleteBill`: attempts `deleteFromCloudinary(bill.cloudinaryPublicId)` after MongoDB delete
 
-### 2.4 Updated Env
-- [x] `server/.env` — added `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
-- [x] `server/.env.example` — added Cloudinary section with placeholder values
+### 2.4 Updated Routes
+- [x] `server/src/routes/upload.js` — switched imports from `firebaseStorage.js` to `cloudinaryStorage.js`
+  - POST `/api/upload` returns `{ url, publicId }` instead of just `imageUrl`
+  - DELETE `/api/upload` uses `publicId` query param instead of `url`
 
-### 2.5 Updated Docs
-- [x] `CLAUDE.md` — Firebase → Cloudinary in tech stack, allowed APIs, env vars, anti-patterns
+### 2.5 Updated Server
+- [x] `server/src/server.js` — removed `initFirebase()` call, removed firebase import
+
+### 2.6 Updated Env
+- [x] `server/.env` — added `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- [x] `server/.env.example` — added Cloudinary section, removed Firebase section
+
+### 2.7 Cleanup
+- [x] Deleted `server/src/config/firebase.js`
+- [x] Deleted `server/src/utils/firebaseStorage.js`
+- [x] Removed `firebase-admin` from `server/package.json`
+- [x] `CLAUDE.md` — updated project structure, Firebase → Cloudinary throughout
 
 ---
 
 ## Phase 3: Verification
 
 - [x] TypeScript + Vite build: 22 modules, 0 errors
-- [x] All 12 backend modules import (including cloudinaryStorage.js)
+- [x] All backend modules import cleanly
 - [x] Stub backend works with `cloudinaryPublicId` field
-- [ ] Full pipeline test with real Cloudinary upload (needs Vision + Gemini keys)
+- [x] Full pipeline test with Cloudinary + Vision + Cohere + MongoDB
 
-## What was NOT removed
+## Gemini → Cohere Migration (2026-06-19)
 
-- `server/src/utils/firebaseStorage.js` kept for reference — can be deleted later
-- `server/src/config/firebase.js` kept (Firebase init still exists but is non-fatal)
-- `firebase-admin` package not uninstalled (may still be useful for other Firebase services)
-
-## Cleanup pending
-
-- Delete `server/src/cloudinary-onboard.js` after confirmation (onboarding test script)
-- Remove `firebase-admin` from package.json if no other Firebase services are needed
-- Delete `server/src/utils/firebaseStorage.js` and `server/src/config/firebase.js`
+- [x] `server/src/utils/cohereService.js` — created, replaces geminiService.js
+- [x] `server/src/controllers/billController.js` — imports from cohereService.js
+- [x] `server/src/utils/geminiService.js` — deleted
+- [x] `server/package.json` — replaced `@google/genai` with `cohere-ai`
+- [x] `server/.env.example` — replaced `GEMINI_API_KEY` with `COHERE_API_KEY`
+- [x] All `.claude/agents/` updated (pipeline-debugger, mern-reviewer, ai-ocr-specialist)
+- [x] All `.claude/skills/` updated (test-pipeline, code-review, setup-env, extract-categorize-bill)
+- [x] `.claude/plans/01-bill-organizer.md` — Firebase → Cloudinary, Gemini → Cohere throughout
+- [x] `CLAUDE.md` — anti-pattern checklist updated for Cohere
+- [x] `README.md` — already reflects Cloudinary + Cohere stack

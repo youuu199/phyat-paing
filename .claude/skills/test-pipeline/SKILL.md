@@ -1,15 +1,15 @@
 ---
 name: bill-organizer:test-pipeline
-description: End-to-end test of the upload → Cloudinary → Vision OCR → Gemini AI → MongoDB save pipeline. Activates when user wants to verify the full pipeline works, debug OCR/AI output, or test with a sample bill image.
+description: End-to-end test of the upload → Cloudinary → Tesseract OCR → Cohere AI → MongoDB save pipeline. Activates when user wants to verify the full pipeline works, debug OCR/AI output, or test with a sample bill image.
 ---
 
 # Test Pipeline — Bill Organizer
 
-Test the full pipeline end-to-end: upload image → Cloudinary → Vision OCR → Gemini classification → MongoDB save.
+Test the full pipeline end-to-end: upload image → Cloudinary → Tesseract OCR → Cohere classification → MongoDB save.
 
 ## Prerequisites
 - All environment variables set (use `/setup-env` first if needed)
-- All services configured (Cloudinary, Vision, Gemini, MongoDB)
+- All services configured (Cloudinary, Cohere, MongoDB)
 - Backend running or testable via direct module imports
 
 ## Step-by-Step Test
@@ -40,47 +40,60 @@ console.log('✓ Cloudinary upload OK:', result.secure_url);
 console.log('  Public ID:', result.public_id);
 ```
 
-### Step 2: Test Vision OCR (isolated)
+### Step 2: Test Tesseract OCR (isolated)
 
 ```javascript
-import vision from '@google-cloud/vision';
+import Tesseract from 'tesseract.js';
 
-const client = new vision.ImageAnnotatorClient({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  },
-});
+// Create a scheduler with a worker pool for concurrency
+const scheduler = Tesseract.createScheduler();
+const workers = await Promise.all(
+  Array.from({ length: 3 }, () =>
+    Tesseract.createWorker('eng+mya', 1, {
+      cachePath: '/home/vim/.tesseract-cache',
+    })
+  )
+);
+for (const w of workers) scheduler.addWorker(w);
 
-// Test with a local image file
-const [result] = await client.documentTextDetection({
-  image: { source: { imageUri: 'https://placehold.co/600x400?text=Test+Bill' } },
-  imageContext: { languageHints: ['en', 'my'] },
-});
+// Test with any image buffer (from file, multer, etc.)
+const { data } = await scheduler.addJob('recognize', imageBuffer);
 
-console.log('✓ Vision OCR OK');
-console.log('  Text:', result.fullTextAnnotation?.text?.substring(0, 100) || '(no text found)');
+console.log('✓ Tesseract OCR OK');
+console.log('  Text:', data.text?.substring(0, 100) || '(no text found)');
+console.log('  Confidence:', Math.round(data.confidence), '%');
+
+// Cleanup
+await scheduler.terminate();
 ```
 
-### Step 3: Test Gemini Classification (isolated)
+### Step 3: Test Cohere Classification (isolated)
 
 ```javascript
-import { GoogleGenAI } from '@google/genai';
+import { CohereClientV2 } from 'cohere-ai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
 
 const sampleText = `Yangon Electricity Supply Corporation
 Bill for March 2025
 Amount: 25,000 MMK
 Due Date: 15 April 2025`;
 
-const response = await ai.models.generateContent({
-  model: 'gemini-2.5-flash',
-  contents: `Extract bill info from this text:\n\n${sampleText}`,
-  config: {
-    systemInstruction: 'You extract bill data into JSON. Return ONLY valid JSON.',
-    responseMimeType: 'application/json',
-    responseSchema: {
+const response = await co.chat({
+  model: 'command-a-plus-05-2026',
+  messages: [{
+    role: 'user',
+    content: `You extract bill data into JSON. Return ONLY valid JSON.
+
+Extract from this text:
+
+---
+${sampleText}
+---`,
+  }],
+  response_format: {
+    type: 'json_object',
+    schema: {
       type: 'object',
       properties: {
         title: { type: 'string' },
@@ -92,8 +105,14 @@ const response = await ai.models.generateContent({
   },
 });
 
-const data = JSON.parse(response.text);
-console.log('✓ Gemini OK:', data);
+// Find the text block (Cohere may wrap in thinking blocks)
+const contents = response.message?.content || [];
+const textBlock = contents.find((c) => c.type === 'text');
+let text = textBlock?.text || '{}';
+text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+const data = JSON.parse(text);
+console.log('✓ Cohere OK:', data);
 // Expected: { title: "...", amount: 25000, category: "Electricity" }
 ```
 
@@ -106,6 +125,7 @@ import Bill from './models/Bill.js';
 await mongoose.connect(process.env.MONGODB_URI);
 
 const bill = await Bill.create({
+  userId: new mongoose.Types.ObjectId(), // dummy user for test
   title: 'Test Bill',
   amount: 10000,
   category: 'Other',
@@ -128,15 +148,21 @@ async function testFullPipeline(imagePath) {
   // 1. Upload to Cloudinary → get URL
   const { url, publicId } = await uploadToCloudinary(fs.readFileSync(imagePath), 'test-bill.jpg', 'image/jpeg');
 
-  // 2. OCR via Vision
+  // 2. OCR via Tesseract
   const rawText = await extractTextFromImage(fs.readFileSync(imagePath));
 
-  // 3. Classify via Gemini
+  // 3. Classify via Cohere
   const billData = await classifyBillData(rawText);
 
-  // 4. Save to MongoDB
+  // 4. Validate (Stage 4.5)
+  if (!billData.amount || billData.amount <= 0 || billData.title === 'Unknown Bill') {
+    throw new Error('Bill validation failed — no amount detected or unknown title');
+  }
+
+  // 5. Save to MongoDB
   const bill = await Bill.create({
     ...billData,
+    userId: testUserId,
     imageUrl: url,
     cloudinaryPublicId: publicId,
     rawText,
@@ -149,8 +175,9 @@ async function testFullPipeline(imagePath) {
 
 ## Verification Checklist
 - [ ] Cloudinary: image uploaded, secure URL accessible in browser
-- [ ] Vision: raw text extracted (contains recognizable text from the image)
-- [ ] Gemini: JSON returned with valid `title`, `amount` (number), `category` (valid enum)
+- [ ] Tesseract: raw text extracted (contains recognizable text from the image, confidence > 50%)
+- [ ] Cohere: JSON returned with valid `title`, `amount` (number), `category` (valid enum)
+- [ ] Validation: bills with amount=0 or title="Unknown Bill" are rejected (422)
 - [ ] MongoDB: document saved with all fields, `_id` assigned, `cloudinaryPublicId` stored, `createdAt` auto-set
 - [ ] Category is one of: Electricity, Water, Internet, Phone, Shopping, Other
 
@@ -158,10 +185,14 @@ async function testFullPipeline(imagePath) {
 
 | Symptom | Likely Cause |
 |---------|-------------|
-| `MongooseServerSelectionError` | MongoDB not running, or `localhost` instead of `127.0.0.1` |
+| `MongooseServerSelectionError` | MongoDB not reachable — check URI or ensure in-memory fallback works |
 | `Cloud config is not specified` | `CLOUDINARY_CLOUD_NAME` / API_KEY / API_SECRET not set in .env |
 | `upload_stream is not a function` | Using `upload()` with a Buffer — use `upload_stream()` |
-| `401 Unauthorized` (Vision) | Using API key instead of service account credentials |
-| Gemini `404 model not found` | Wrong model string — use `gemini-2.5-flash` not `gemini-pro` |
+| `tesseract.js` worker hangs | Single worker serializing jobs — use `createScheduler()` with worker pool |
+| `ENOENT: scandir /home/vim/.mongodb-memory` | Stale mongodb-memory directory — `rm -rf /home/vim/.mongodb-memory` |
+| Cohere `404 model not found` | Wrong model string — use `command-a-plus-05-2026` not `command-r` |
+| `response.message.content[0].text` is empty or wrong | Cohere wraps in thinking blocks — find text block by `.type === 'text'` |
 | `E11000 duplicate key` | Not a real error in test — just delete the duplicate and retry |
-| Vision returns empty text | Image has no text, or wrong language hints — try adding `['my', 'en']` |
+| Tesseract returns empty text | Image has no text, or `eng+mya` traineddata missing — verify `server/eng.traineddata` and `server/mya.traineddata` are present |
+| `createScheduler is not a function` | Tesseract.js may need update — `createScheduler()` is available since v5.x |
+| 422 `UNRECOGNIZED_BILL` | Bill validation rejected it — amount was 0 or title was "Unknown Bill" |

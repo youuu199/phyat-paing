@@ -1,14 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 
 interface BillUploaderProps {
   onUploadSuccess: () => void;
 }
 
+const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff';
+
 export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { apiFetch } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] || null;
@@ -29,19 +34,20 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
       const formData = new FormData();
       formData.append('image', file);
 
-      const res = await fetch('/api/bills', {
+      const res = await apiFetch('/api/bills', {
         method: 'POST',
         body: formData,
       });
 
-      // Try to parse JSON error body, but handle non-JSON responses (e.g. HTML 404)
       if (!res.ok) {
         const text = await res.text();
         let message = `Upload failed (${res.status})`;
         try {
           const data = JSON.parse(text);
           message = data.error || message;
-        } catch {}
+        } catch {
+          // non-JSON response — use status message
+        }
         throw new Error(message);
       }
 
@@ -52,7 +58,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
 
-      // Tell parent to refresh the dashboard
+      // Tell parent to refresh
       onUploadSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -61,24 +67,92 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
     }
   };
 
+  // Drag-and-drop handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set false when leaving the uploader, not entering a child
+    if (e.currentTarget === e.target) {
+      setDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    setError(null);
+
+    const dropped = e.dataTransfer.files?.[0];
+    if (!dropped) return;
+
+    if (!dropped.type.startsWith('image/')) {
+      setError('Please drop an image file (JPEG, PNG, WebP, etc.).');
+      return;
+    }
+
+    setFile(dropped);
+
+    // Update the hidden file input so it stays in sync
+    if (inputRef.current) {
+      const dt = new DataTransfer();
+      dt.items.add(dropped);
+      inputRef.current.files = dt.files;
+    }
+  }, []);
+
   return (
-    <div className="bill-uploader">
-      <h2>📄 Upload a Bill</h2>
-      <p className="bill-uploader__hint">
-        Select a photo of your utility bill or receipt — we'll extract the data automatically.
-      </p>
+    <div
+      className={`bill-uploader${dragOver ? ' bill-uploader--dragover' : ''}${file && !uploading ? ' bill-uploader--has-file' : ''}`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      role="region"
+      aria-label="Bill upload area"
+    >
+      <span className="bill-uploader__icon" aria-hidden="true">
+        {uploading ? '⏳' : file ? '📄' : '📤'}
+      </span>
+
+      <h2>{uploading ? 'Processing Bill...' : 'Upload a Bill'}</h2>
+
+      {!uploading && (
+        <p className="bill-uploader__hint">
+          Drop your utility bill or receipt image here, or click to browse.
+        </p>
+      )}
 
       <div className="bill-uploader__controls">
         <input
           ref={inputRef}
+          className="bill-uploader__file-input"
+          id="bill-file-input"
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff"
+          accept={ACCEPTED_TYPES}
           onChange={handleFileChange}
           disabled={uploading}
         />
+        <label
+          className="bill-uploader__file-label"
+          htmlFor="bill-file-input"
+        >
+          📁 Choose File
+        </label>
 
         <button
-          className="bill-uploader__button"
+          className={`bill-uploader__button${uploading ? ' bill-uploader__button--uploading' : ''}`}
           onClick={handleUpload}
           disabled={!file || uploading}
         >
@@ -88,11 +162,24 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
 
       {file && !uploading && (
         <p className="bill-uploader__selected">
-          Selected: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)} KB)
+          <span className="bill-uploader__selected-pill">
+            ✅ {file.name}
+          </span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
+            ({(file.size / 1024).toFixed(1)} KB)
+          </span>
         </p>
       )}
 
-      {error && <p className="bill-uploader__error">{error}</p>}
+      {dragOver && (
+        <p className="bill-uploader__drop-hint">Drop your image here</p>
+      )}
+
+      {error && (
+        <p className="bill-uploader__error" role="alert">
+          ⚠️ {error}
+        </p>
+      )}
     </div>
   );
 }

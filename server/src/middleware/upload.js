@@ -13,7 +13,7 @@ import multer from 'multer';
  *  router.post('/', upload.single('image'), handler);
  *
  * Anti-patterns avoided:
- *  - Not using diskStorage (unnecessary I/O; the file goes straight to Firebase)
+ *  - Not using diskStorage (unnecessary I/O; the file goes straight to Cloudinary)
  *  - Not accepting HEIC/PDF/SVG (unsupported by Vision API for this use case)
  */
 const upload = multer({

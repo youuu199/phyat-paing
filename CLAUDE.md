@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-A MERN web app that lets users upload images of utility bills/receipts, extracts data via OCR (Google Cloud Vision) and AI classification (Gemini 2.5), and displays them on a filterable dashboard.
+A MERN web app that lets users upload images of utility bills/receipts, extracts data via OCR (Tesseract.js) and AI classification (Cohere), and displays them on a filterable dashboard. Includes JWT-based user authentication with per-user bill isolation.
 
-**Data flow:** Upload image → Cloudinary → Google Vision OCR → Gemini AI → MongoDB → React Dashboard
+**Data flow:** Upload image → Cloudinary → Tesseract OCR → Cohere AI → MongoDB → React Dashboard
 
 ## Tech Stack (exact versions — do NOT use alternatives)
 
@@ -15,8 +15,9 @@ A MERN web app that lets users upload images of utility bills/receipts, extracts
 | Database | Mongoose 8.x | No `useNewUrlParser`/`useUnifiedTopology` (removed in v6+) |
 | File Upload | multer | `memoryStorage()` — file on `req.file.buffer` |
 | Image Storage | cloudinary | `upload_stream()` NOT `upload()` for Buffers |
-| OCR | @google-cloud/vision | `documentTextDetection()` NOT `textDetection()` |
-| AI | @google/genai | Model `gemini-2.5-flash`. `config.systemInstruction` NOT top-level |
+| OCR | tesseract.js | `createWorker('eng+mya')` + `createScheduler()` for concurrent jobs. `scheduler.addJob('recognize', buffer)` NOT single worker |
+| AI | cohere-ai | Model `command-a-plus-05-2026`. `response_format` with schema, NOT `config.systemInstruction` |
+| Auth | jsonwebtoken + bcryptjs | JWT in `Authorization: Bearer <token>` header. `req.userId` set by auth middleware |
 | CORS | cors | `npm install cors` (not built into Express) |
 
 ## Project Structure
@@ -37,10 +38,10 @@ pyat-paing/
 │   │   ├── app.js                 # Express app with cors, json, error handler
 │   │   ├── routes/                # Express Routers
 │   │   ├── controllers/           # Request handlers
-│   │   ├── models/                # Mongoose models
-│   │   ├── middleware/            # Custom middleware (multer, etc.)
-│   │   ├── config/                # db.js, firebase.js (legacy), cloudinaryStorage.js
-│   │   └── utils/                 # ocrService.js, geminiService.js, cloudinaryStorage.js, firebaseStorage.js (legacy)
+│   │   ├── models/                # Mongoose models (Bill, User)
+│   │   ├── middleware/            # Custom middleware (multer, auth)
+│   │   ├── config/                # db.js
+│   │   └── utils/                 # ocrService.js, cohereService.js, cloudinaryStorage.js
 │   ├── .env.example               # Template — copy to .env
 │   └── package.json               # type: "module" (ESM)
 ├── .gitignore                     # node_modules, .env, dist/, service account keys
@@ -108,40 +109,51 @@ const transformedUrl = cloudinary.url(publicId, {
 - ❌ `upload_stream()` returns a stream, NOT a Promise — wrap in Promise
 - ❌ Do NOT look for `uploader.uploadBuffer()` — it does not exist
 
-### Google Cloud Vision
+### Tesseract.js (OCR)
 ```javascript
-import vision from '@google-cloud/vision';
+import Tesseract from 'tesseract.js';
 
-const client = new vision.ImageAnnotatorClient({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  },
-});
+// Use a scheduler (worker pool) for concurrent OCR — single worker serializes jobs
+const scheduler = Tesseract.createScheduler();
 
-// Buffer OR { image: { content: base64 } } OR { image: { source: { imageUri } } }
-const [result] = await client.documentTextDetection(imageBuffer, {
-  imageContext: { languageHints: ['en', 'my'] },
-});
-const rawText = result.fullTextAnnotation.text;
+// Create multiple workers for the pool
+const workers = await Promise.all(
+  Array.from({ length: 3 }, () =>
+    Tesseract.createWorker('eng+mya', 1, {
+      cachePath: '/home/vim/.tesseract-cache',
+    })
+  )
+);
+for (const w of workers) scheduler.addWorker(w);
+
+// Recognize text from image buffer (concurrent-safe)
+const { data } = await scheduler.addJob('recognize', imageBuffer);
+const extractedText = data.text.trim();
+// data also has: data.confidence (0-100), data.words, data.lines, data.paragraphs
+
+// Shutdown all workers
+await scheduler.terminate();
 ```
-- ❌ Do NOT use `textDetection()` — only 10 annotations max. Use `documentTextDetection()` for bills
-- ❌ Do NOT use API key auth — requires service account credentials
-- ❌ The `private_key` MUST have literal `\n` newlines, not escaped `\\n`
+- ❌ Do NOT use a single `createWorker()` for concurrent requests — use `createScheduler()` with 3 workers
+- ❌ Do NOT call `worker.recognize()` directly — use `scheduler.addJob('recognize', buffer)` for concurrency
+- ❌ Do NOT use Google Cloud Vision (`@google-cloud/vision`) — the project uses free offline Tesseract.js
+- ❌ `createScheduler()` is NOT an async factory — call it synchronously then add workers
 
-### Google Gemini 2.5
+### Cohere (Command A)
 ```javascript
-import { GoogleGenAI } from '@google/genai';
+import { CohereClientV2 } from 'cohere-ai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
 
-const response = await ai.models.generateContent({
-  model: 'gemini-2.5-flash',
-  contents: `Extract bill data from this text:\n\n${rawText}`,
-  config: {
-    systemInstruction: 'You extract bill data. Return ONLY valid JSON.',
-    responseMimeType: 'application/json',
-    responseSchema: {
+const response = await co.chat({
+  model: 'command-a-plus-05-2026',
+  messages: [{
+    role: 'user',
+    content: `You extract bill data. Return ONLY valid JSON.\n\nExtract bill data from this text:\n\n${rawText}`,
+  }],
+  response_format: {
+    type: 'json_object',
+    schema: {
       type: 'object',
       properties: {
         title:    { type: 'string' },
@@ -152,11 +164,19 @@ const response = await ai.models.generateContent({
     },
   },
 });
-const billData = JSON.parse(response.text);
+
+// Find the text block (may be wrapped in thinking/content blocks)
+const contents = response.message?.content || [];
+const textBlock = contents.find((c) => c.type === 'text');
+let text = textBlock?.text || '{}';
+text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+const billData = JSON.parse(text);
 ```
-- ❌ Do NOT use `gemini-pro` (legacy 1.0 — returns 404)
-- ❌ Do NOT put `systemInstruction` at top level — it goes inside `config: { }`
-- ❌ Do NOT use Google Cloud service account key with `@google/genai` — that requires Vertex AI, not Gemini API
+- ❌ Do NOT use `CohereClient` (v1) — always use `CohereClientV2` (v2)
+- ❌ Do NOT use `system` role in messages — Cohere v2 only supports `user`/`assistant`; fold system prompt into user content
+- ❌ Do NOT use `command-nightly` in production — use `command-a-plus-05-2026`
+- ❌ Do NOT forget `response_format.schema` — `{ type: "json_object" }` alone doesn't enforce structure
+- ❌ Do NOT assume `response.message.content[0].text` — find the text block by type
 
 ### Mongoose
 ```javascript
@@ -165,12 +185,20 @@ import mongoose from 'mongoose';
 await mongoose.connect('mongodb://127.0.0.1:27017/bill-organizer');
 // Or Atlas: mongodb+srv://user:pass@cluster.mongodb.net/bill-organizer?retryWrites=true&w=majority
 
+// For local dev without Atlas: mongodb-memory-server fallback
+import { MongoMemoryServer } from 'mongodb-memory-server';
+const mongod = await MongoMemoryServer.create();
+const fallbackUri = mongod.getUri();
+await mongoose.connect(fallbackUri);
+
 const billSchema = new Schema({
-  title:    { type: String, required: true },
-  amount:   { type: Number, required: true },
-  category: { type: String, enum: ['Electricity','Water','Internet','Phone','Shopping','Other'], required: true },
-  imageUrl: { type: String, required: true },
-  rawText:  { type: String },
+  userId:              { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  title:               { type: String, required: true },
+  amount:              { type: Number, required: true },
+  category:            { type: String, enum: ['Electricity','Water','Internet','Phone','Shopping','Other'], required: true },
+  imageUrl:            { type: String, required: true },
+  cloudinaryPublicId:  { type: String },
+  rawText:             { type: String },
 }, { timestamps: true });
 
 const Bill = model('Bill', billSchema);
@@ -178,12 +206,14 @@ const Bill = model('Bill', billSchema);
 - ❌ Do NOT pass `useNewUrlParser`, `useUnifiedTopology`, `useFindAndModify`, `useCreateIndex` (removed in Mongoose 6)
 - ❌ Do NOT use `localhost:27017` — use `127.0.0.1:27017` (avoids IPv6 resolution issues)
 - ❌ Do NOT use `findByIdAndUpdate(id, update, { new: true })` — use `{ returnDocument: 'after' }`
+- ❌ Do NOT return all bills without userId filter — use `$match: { userId }` in aggregations
 
-### Express + Multer
+### Express + Multer + Auth
 ```javascript
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 app.use(cors());
@@ -194,6 +224,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.post('/api/upload', upload.single('image'), handler);
 // File at: req.file.buffer, req.file.mimetype, req.file.originalname
 
+// JWT auth middleware
+function auth(req, res, next) {
+  const token = req.headers.authorization?.slice(7); // "Bearer <token>"
+  const payload = jwt.verify(token, process.env.JWT_SECRET);
+  req.userId = payload.userId;
+  next();
+}
+
 // Error handler MUST be last, MUST have 4 args:
 app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message });
@@ -203,6 +241,7 @@ app.listen(process.env.PORT || 5000);
 ```
 - ❌ Do NOT install `body-parser` — `express.json()` is built-in since Express 4.16
 - ❌ Do NOT put `index.html` in `public/` — Vite requires it at project root
+- ❌ Do NOT skip auth middleware on `/api/bills` routes — all bills must be user-scoped
 
 ## Environment Variables (server/.env)
 
@@ -212,9 +251,8 @@ PORT=5000
 CLOUDINARY_CLOUD_NAME=<cloud-name>
 CLOUDINARY_API_KEY=<api-key>
 CLOUDINARY_API_SECRET=<api-secret>
-GOOGLE_CLIENT_EMAIL=<service-account-email>
-GOOGLE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
-GEMINI_API_KEY=<key-from-ai.google.dev>
+COHERE_API_KEY=<key-from-dashboard.cohere.com>
+JWT_SECRET=<random-256-bit-secret>
 ```
 
 ## Anti-Pattern Checklist (run before commits)
@@ -229,26 +267,41 @@ grep -rn "localhost:27017" server/src/
 # Cloudinary upload() with Buffer (use upload_stream() instead)
 grep -rn "cloudinary\.uploader\.upload\s*(" server/src/
 
-# Gemini wrong model name
-grep -rn "gemini-pro\b" server/src/
+# Cohere wrong client version (use CohereClientV2 not CohereClient v1)
+grep -rn "from 'cohere-ai'" server/src/ | grep -v "CohereClientV2"
 
-# Vision wrong method
-grep -rn "client\.textDetection" server/src/
+# Google Cloud Vision import (should NOT exist — we use Tesseract.js)
+grep -rn "@google-cloud/vision" server/src/
+
+# Tesseract single worker (should use scheduler for concurrency)
+grep -rn "createWorker\|worker\.recognize" server/src/ | grep -v "createScheduler\|scheduler"
 
 # body-parser package (not needed)
 grep -rn "body-parser" server/src/ server/package.json
 
 # Cloudinary missing v2 import
 grep -rn "from 'cloudinary'" server/src/ | grep -v "v2 as"
+
+# Bills without userId filter (all queries must be user-scoped)
+grep -rn "Bill\.find\|Bill\.aggregate" server/src/ | grep -v "userId"
 ```
 
 ## Development Workflow
 
 1. **Before writing any code:** Resolve docs via Context7 MCP for the library in question
-2. **Small commits per phase:** See `.claude/plans/01-bill-organizer.md` for the 6-phase plan
+2. **Small commits per phase:** See `.claude/plans/01-bill-organizer.md` for the phased plan
 3. **Vite proxy:** When frontend calls `/api/*`, add `server.proxy` in `vite.config.ts` to forward to `http://localhost:5000`
-4. **Error handling:** Every `await mongoose.connect()`, `cloudinary.upload_stream()` (wrapped in Promise), Vision/Gemini call must be in try/catch
+4. **Error handling:** Every `await mongoose.connect()`, `cloudinary.upload_stream()` (wrapped in Promise), Tesseract/Cohere call must be in try/catch
 5. **Never commit:** `.env`, `serviceAccountKey.json`, `*-service-account.json`, API keys/secrets
+6. **Validation:** After OCR+AI, reject bills with `amount <= 0` or `title === 'Unknown Bill'` (422 + cleanup Cloudinary image)
+
+## Pipeline Validation (Stage 4.5)
+
+After Cohere classification, the backend validates extracted data:
+- `amount <= 0` → rejects with 422 "No total amount could be detected"
+- `title === 'Unknown Bill'` → rejects with 422 "This bill could not be identified"
+- On rejection: Cloudinary image is deleted (no orphaned files)
+- Response includes `code: 'UNRECOGNIZED_BILL'` for frontend alert handling
 
 ## Project Skills & Agents
 
@@ -258,16 +311,16 @@ grep -rn "from 'cloudinary'" server/src/ | grep -v "v2 as"
 |-------|-----|
 | `bill-organizer:setup-env` | Configure all .env variables interactively |
 | `bill-organizer:db-seed` | Seed MongoDB with 12 realistic test bills |
-| `bill-organizer:test-pipeline` | Test upload→Cloudinary→Vision→Gemini→MongoDB end-to-end |
+| `bill-organizer:test-pipeline` | Test upload→Cloudinary→Tesseract→Cohere→MongoDB end-to-end |
 | `bill-organizer:code-review` | Grep-check for known anti-patterns |
-| `bill-organizer:extract-categorize-bill` | Run Gemini 2.5 classification step standalone — debug AI output, reprocess stored rawText |
+| `bill-organizer:extract-categorize-bill` | Run Cohere classification step standalone — debug AI output, reprocess stored rawText |
 | `bill-organizer:upload-cloudinary-storage` | Test multer→Cloudinary upload in isolation — verify `upload_stream()`, credentials, URL generation |
 
 ### Agents
 
 | Agent | Color | Focus |
 |-------|-------|-------|
-| `mern-reviewer` | red | MERN + Cloudinary anti-pattern detection (Mongoose deprecated opts, Cloudinary upload() vs upload_stream(), Gemini wrong model) |
-| `pipeline-debugger` | yellow | Stage-by-stage pipeline failure isolation (Multer→Cloudinary→Vision→Gemini→MongoDB) |
+| `mern-reviewer` | red | MERN + Cloudinary anti-pattern detection (Mongoose deprecated opts, Cloudinary upload() vs upload_stream(), Cohere wrong client version) |
+| `pipeline-debugger` | yellow | Stage-by-stage pipeline failure isolation (Multer→Cloudinary→Tesseract→Cohere→MongoDB) |
 | `backend-db-specialist` | blue | Express routing, Mongoose schema design, MongoDB aggregation, multer config, REST API patterns |
-| `ai-ocr-specialist` | green | Vision OCR text detection, Gemini structured output, Myanmar+English prompt engineering, image preprocessing |
+| `ai-ocr-specialist` | green | Tesseract.js OCR, Cohere structured output, Myanmar+English prompt engineering, image preprocessing |

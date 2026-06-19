@@ -4,21 +4,23 @@ import { Schema, model } from 'mongoose';
  * Bill document schema.
  *
  * Fields:
+ *  - userId:   Owner of this bill (references User model)
  *  - title:    Human-readable bill name (e.g. "March Electricity Bill")
  *  - amount:   Total in MMK (e.g. 25000)
  *  - category: Classification enum
- *  - imageUrl: Public Firebase Storage URL of the uploaded image
+ *  - imageUrl: Public Cloudinary URL (secure_url) of the uploaded image
  *  - rawText:  Original OCR text for debugging/reprocessing
  *
  * Timestamps: createdAt + updatedAt are auto-managed by Mongoose.
- *
- * Anti-patterns avoided:
- *  - No unique:true on title (users may have duplicate bill names)
- *  - enum at Mongoose level (MongoDB does not enforce enums natively)
- *  - timestamps: true (adds createdAt/updatedAt automatically)
  */
 const billSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     title: {
       type: String,
       required: true,

@@ -1,23 +1,23 @@
 ---
 name: bill-organizer:extract-categorize-bill
-description: Takes raw OCR text and runs the Gemini 2.5 classification step to extract structured bill data. Use standalone for debugging AI output, reprocessing stored rawText, or testing prompt variations.
+description: Takes raw OCR text and runs the Cohere classification step to extract structured bill data. Use standalone for debugging AI output, reprocessing stored rawText, or testing prompt variations.
 ---
 
 # Extract and Categorize Bill Data
 
-Run the Gemini 2.5 classification step in isolation. Takes raw text (from OCR or manual input) and returns structured JSON with `title`, `amount`, and `category`.
+Run the Cohere classification step in isolation. Takes raw text (from OCR or manual input) and returns structured JSON with `title`, `amount`, and `category`.
 
 ## When to Use
 
 - Debugging: the full pipeline saves a bill but category/amount is wrong — re-extract from stored `rawText`
-- Prompt tuning: test different system instructions against the same raw text
+- Prompt tuning: test different prompts against the same raw text
 - Batch reprocessing: fix misclassified bills already in MongoDB
-- Dry-run testing: verify Gemini output WITHOUT consuming Cloudinary/Vision quota
+- Dry-run testing: verify Cohere output WITHOUT consuming Cloudinary/Tesseract resources
 
 ## Prerequisites
 
-- `GEMINI_API_KEY` in `server/.env`
-- `@google/genai` installed: `npm install @google/genai`
+- `COHERE_API_KEY` in `server/.env`
+- `cohere-ai` installed: `npm install cohere-ai`
 
 ## Usage
 
@@ -27,22 +27,30 @@ Create a script that reads text and classifies it:
 
 ```javascript
 // server/src/utils/classifyText.js
-import { GoogleGenAI } from '@google/genai';
+import { CohereClientV2 } from 'cohere-ai';
 import 'dotenv/config';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
 
 async function classifyBillData(rawText) {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: `Extract bill information from the following OCR text:\n\n${rawText}`,
-    config: {
-      systemInstruction: `You are a bill data extraction specialist.
+  const response = await co.chat({
+    model: 'command-a-plus-05-2026',
+    messages: [{
+      role: 'user',
+      content: `You are a bill data extraction specialist.
 Extract the title, total amount (as a number), and category from OCR text.
 Categories: Electricity, Water, Internet, Phone, Shopping, Other.
-Return ONLY valid JSON.`,
-      responseMimeType: 'application/json',
-      responseSchema: {
+Return ONLY valid JSON.
+
+Now extract from this OCR text:
+
+---
+${rawText}
+---`,
+    }],
+    response_format: {
+      type: 'json_object',
+      schema: {
         type: 'object',
         properties: {
           title:    { type: 'string' },
@@ -54,7 +62,12 @@ Return ONLY valid JSON.`,
     },
   });
 
-  return JSON.parse(response.text);
+  // Find the text block (Cohere may wrap in thinking blocks)
+  const contents = response.message?.content || [];
+  const textBlock = contents.find((c) => c.type === 'text');
+  let text = textBlock?.text || '{}';
+  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  return JSON.parse(text);
 }
 
 // CLI usage
@@ -75,9 +88,9 @@ cd server && node src/utils/classifyText.js "Yangon Electricity, Total: 25000"
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import Bill from '../models/Bill.js';
-import { GoogleGenAI } from '@google/genai';
+import { CohereClientV2 } from 'cohere-ai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
 
 await mongoose.connect(process.env.MONGODB_URI);
 
@@ -90,17 +103,23 @@ for (const bill of bills) {
     continue;
   }
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: `Reclassify this bill:\n\n${bill.rawText}`,
-    config: {
-      systemInstruction: 'Recategorize. Return JSON with title, amount, category.',
-      responseMimeType: 'application/json',
-      responseSchema: { /* ... same schema ... */ },
+  const response = await co.chat({
+    model: 'command-a-plus-05-2026',
+    messages: [{
+      role: 'user',
+      content: `Reclassify this bill:\n\n${bill.rawText}`,
+    }],
+    response_format: {
+      type: 'json_object',
+      schema: { /* ... same schema ... */ },
     },
   });
 
-  const newData = JSON.parse(response.text);
+  const contents = response.message?.content || [];
+  const textBlock = contents.find((c) => c.type === 'text');
+  let text = textBlock?.text || '{}';
+  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  const newData = JSON.parse(text);
   await Bill.findByIdAndUpdate(bill._id, {
     title: newData.title,
     amount: newData.amount,
@@ -114,12 +133,12 @@ await mongoose.disconnect();
 
 ### Option C: Interactive prompt testing
 
-To test different system prompts against the same text:
+To test different prompts against the same text:
 
 ```javascript
-import { GoogleGenAI } from '@google/genai';
+import { CohereClientV2 } from 'cohere-ai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
 
 const rawText = `Your OCR text here...`;
 
@@ -130,16 +149,19 @@ const prompts = [
 ];
 
 for (const prompt of prompts) {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: rawText,
-    config: {
-      systemInstruction: prompt.instruction,
-      responseMimeType: 'application/json',
-      responseSchema: { /* ... */ },
+  const response = await co.chat({
+    model: 'command-a-plus-05-2026',
+    messages: [{ role: 'user', content: `${prompt.instruction}\n\nOCR TEXT:\n${rawText}` }],
+    response_format: {
+      type: 'json_object',
+      schema: { /* ... */ },
     },
   });
-  console.log(`[${prompt.name}]`, JSON.parse(response.text));
+  const contents = response.message?.content || [];
+  const textBlock = contents.find((c) => c.type === 'text');
+  let text = textBlock?.text || '{}';
+  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  console.log(`[${prompt.name}]`, JSON.parse(text));
 }
 ```
 
@@ -164,11 +186,12 @@ for (const prompt of prompts) {
 
 | Problem | Fix |
 |---------|-----|
-| Amount is 0 | OCR text may not have the amount clearly — check rawText quality |
-| Category always "Other" | System instruction needs Myanmar company/context hints |
-| Title is "Unknown Bill" | OCR text may be garbled — improve image quality or Vision language hints |
-| Gemini returns markdown | Check `responseMimeType: 'application/json'` is set in `config` |
-| `response.text` throws on `JSON.parse` | Gemini may be wrapping JSON in markdown fences — strip with `.replace(/```json\n?/g, '').replace(/```/g, '').trim()` |
+| Amount is 0 | OCR text may not have the amount clearly — check rawText quality. The backend will now reject these with 422. |
+| Category always "Other" | User prompt needs Myanmar company/context hints |
+| Title is "Unknown Bill" | OCR text may be garbled — improve image quality or add more Myanmar traineddata |
+| Cohere returns markdown | Strip with `.replace(/```json\n?/g, '').replace(/```/g, '').trim()` |
+| `response.message.content[0].text` throws on `JSON.parse` | Cohere may wrap JSON in markdown fences or thinking blocks — find by `.type === 'text'` |
+| `401 Unauthorized` | Wrong or missing `COHERE_API_KEY` |
 
 ## Add to package.json
 ```json

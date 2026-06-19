@@ -6,7 +6,7 @@ const CATEGORIES = [
   'Phone',
   'Shopping',
   'Other',
-];
+] as const;
 
 const CATEGORY_EMOJI: Record<string, string> = {
   All: '📋',
@@ -25,16 +25,21 @@ interface CategoryTabsProps {
 
 export default function CategoryTabs({ selected, onSelect }: CategoryTabsProps) {
   return (
-    <div className="category-tabs">
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat}
-          className={`category-tabs__tab${selected === cat ? ' category-tabs__tab--active' : ''}`}
-          onClick={() => onSelect(cat)}
-        >
-          {CATEGORY_EMOJI[cat]} {cat}
-        </button>
-      ))}
-    </div>
+    <nav className="category-tabs" role="tablist" aria-label="Filter bills by category">
+      {CATEGORIES.map((cat) => {
+        const isActive = selected === cat;
+        return (
+          <button
+            key={cat}
+            role="tab"
+            aria-selected={isActive}
+            className={`category-tabs__tab${isActive ? ' category-tabs__tab--active' : ''}`}
+            onClick={() => onSelect(cat)}
+          >
+            {CATEGORY_EMOJI[cat]} {cat}
+          </button>
+        );
+      })}
+    </nav>
   );
 }

@@ -1,18 +1,18 @@
 import { Router } from 'express';
 import upload from '../middleware/upload.js';
-import { uploadToFirebase, deleteFromFirebase } from '../utils/firebaseStorage.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryStorage.js';
 
 const router = Router();
 
 /**
  * POST /api/upload
- * Upload a single image file to Firebase Storage.
+ * Upload a single image file to Cloudinary.
  *
  * Expects: multipart/form-data with field name "image"
- * Returns: { message, imageUrl, originalName, size }
+ * Returns: { message, imageUrl, publicId, originalName, size }
  *
- * Pipeline stage 1 of 5: this only handles upload to Firebase.
- * The full pipeline (OCR + AI + MongoDB) is at POST /api/bills (Step 5).
+ * This only handles the image upload step in isolation.
+ * The full pipeline (OCR + AI + MongoDB) is at POST /api/bills.
  */
 router.post('/', upload.single('image'), async (req, res, next) => {
   try {
@@ -22,7 +22,7 @@ router.post('/', upload.single('image'), async (req, res, next) => {
       });
     }
 
-    const imageUrl = await uploadToFirebase(
+    const { url, publicId } = await uploadToCloudinary(
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype
@@ -30,7 +30,8 @@ router.post('/', upload.single('image'), async (req, res, next) => {
 
     res.status(200).json({
       message: 'File uploaded successfully',
-      imageUrl,
+      imageUrl: url,
+      publicId,
       originalName: req.file.originalname,
       size: req.file.size,
     });
@@ -40,20 +41,20 @@ router.post('/', upload.single('image'), async (req, res, next) => {
 });
 
 /**
- * DELETE /api/upload?url=<publicUrl>
- * Delete a previously uploaded file from Firebase Storage.
+ * DELETE /api/upload?publicId=<publicId>
+ * Delete a previously uploaded file from Cloudinary.
  *
  * Optional utility endpoint — not part of the main pipeline.
  */
 router.delete('/', async (req, res, next) => {
   try {
-    const { url } = req.query;
+    const { publicId } = req.query;
 
-    if (!url) {
-      return res.status(400).json({ error: 'Query parameter "url" is required' });
+    if (!publicId) {
+      return res.status(400).json({ error: 'Query parameter "publicId" is required' });
     }
 
-    await deleteFromFirebase(url);
+    await deleteFromCloudinary(publicId);
 
     res.status(200).json({ message: 'File deleted successfully' });
   } catch (err) {

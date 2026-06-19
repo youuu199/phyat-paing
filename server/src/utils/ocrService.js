@@ -1,41 +1,78 @@
-import vision from '@google-cloud/vision';
+import Tesseract from 'tesseract.js';
+
+/** Worker pool size — handles up to this many concurrent OCR jobs */
+const POOL_SIZE = 3;
+
+/** Cached scheduler — created once, reused across requests */
+let scheduler = null;
 
 /**
- * Extract raw text from a bill/receipt image using Google Cloud Vision OCR.
+ * Lazy-init a Tesseract scheduler with a pool of workers.
+ * Supports English + Myanmar language data.
  *
- * Optimized for dense documents (bills, receipts) with Myanmar + English support.
+ * A scheduler lets multiple `recognize()` calls run concurrently
+ * (up to POOL_SIZE). Without it, a single worker serializes all
+ * jobs and the second upload blocks until the first finishes —
+ * causing a request timeout.
+ *
+ * @returns {Promise<Tesseract.Scheduler>}
+ */
+async function getScheduler() {
+  if (scheduler) return scheduler;
+
+  scheduler = Tesseract.createScheduler();
+
+  // Spin up multiple workers in parallel
+  const workers = await Promise.all(
+    Array.from({ length: POOL_SIZE }, () =>
+      Tesseract.createWorker('eng+mya', 1, {
+        cachePath: '/home/vim/.tesseract-cache',
+        logger: (m) => {
+          if (m.status === 'error') console.error('[tesseract]', m);
+        },
+      })
+    )
+  );
+
+  for (const w of workers) {
+    scheduler.addWorker(w);
+  }
+
+  console.log(`[tesseract] Scheduler ready with ${POOL_SIZE} workers (eng+mya)`);
+  return scheduler;
+}
+
+/**
+ * Extract raw text from a bill/receipt image using Tesseract.js OCR.
+ *
+ * FREE — no API keys, no billing, runs entirely offline.
+ * Supports English and Myanmar (Burmese) text extraction.
+ * Uses a worker pool so concurrent uploads don't block each other.
  *
  * @param {Buffer} imageBuffer - Raw image bytes (from multer req.file.buffer)
  * @returns {Promise<string>}   - Full extracted text, or empty string if no text found
- *
- * Anti-patterns avoided:
- *  - Using textDetection() — only returns ~10 annotations max
- *  - Using API key auth — requires service account credentials
- *  - Not handling private_key \n escaping from env vars
  */
 export async function extractTextFromImage(imageBuffer) {
-  const client = new vision.ImageAnnotatorClient({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    },
-  });
+  const sched = await getScheduler();
 
-  // Encode to base64 so we can attach imageContext (language hints)
-  // Passing a Buffer directly doesn't allow per-request options
-  const base64Image = imageBuffer.toString('base64');
+  const { data } = await sched.addJob('recognize', imageBuffer);
 
-  const [result] = await client.documentTextDetection({
-    image: { content: base64Image },
-    imageContext: {
-      languageHints: ['en', 'my'], // English first, then Myanmar (Burmese)
-    },
-  });
-
-  if (!result.fullTextAnnotation) {
-    console.warn('Vision OCR returned no text — image may be blank or unreadable');
+  if (!data.text || data.text.trim().length === 0) {
+    console.warn('[tesseract] No text extracted — image may be blank or unreadable');
     return '';
   }
 
-  return result.fullTextAnnotation.text;
+  console.log(`[tesseract] Extracted ${data.text.length} chars, confidence: ${Math.round(data.confidence)}%`);
+  return data.text.trim();
+}
+
+/**
+ * Terminate all Tesseract workers (call on server shutdown).
+ */
+export async function shutdownOCR() {
+  if (scheduler) {
+    await scheduler.terminate();
+    scheduler = null;
+    console.log('[tesseract] Scheduler terminated');
+  }
 }

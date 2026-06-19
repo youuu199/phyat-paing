@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import BillCard from './BillCard';
 import CategoryTabs from './CategoryTabs';
 import BillUploader from './BillUploader';
 import Sidebar from './Sidebar';
+import { useToast } from './Toast';
+import { useAuth } from './AuthContext';
 
 interface Bill {
   _id: string;
@@ -20,6 +22,24 @@ interface MonthEntry {
   count: number;
 }
 
+const SKELETON_COUNT = 6;
+
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card" aria-hidden="true">
+      <div className="skeleton skeleton-card__image" />
+      <div className="skeleton-card__body">
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className="skeleton skeleton-card__title" />
+          <div className="skeleton skeleton-card__badge" />
+        </div>
+        <div className="skeleton skeleton-card__amount" />
+        <div className="skeleton skeleton-card__date" />
+      </div>
+    </div>
+  );
+}
+
 export default function BillDashboard() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [category, setCategory] = useState('All');
@@ -28,10 +48,19 @@ export default function BillDashboard() {
   const [availableMonths, setAvailableMonths] = useState<MonthEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const { toast } = useToast();
+  const { apiFetch } = useAuth();
+  const initialLoadDone = useRef(false);
 
   const fetchBills = useCallback(async () => {
     try {
       setError(null);
+      if (!initialLoadDone.current) {
+        setLoading(true);
+      }
+
       const params = new URLSearchParams();
       if (category !== 'All') params.set('category', category);
       if (selectedYear !== null) {
@@ -40,7 +69,7 @@ export default function BillDashboard() {
       }
 
       const qs = params.toString();
-      const res = await fetch(`/api/bills${qs ? '?' + qs : ''}`);
+      const res = await apiFetch(`/api/bills${qs ? '?' + qs : ''}`);
 
       if (!res.ok) {
         throw new Error(`Failed to fetch bills (${res.status})`);
@@ -48,25 +77,25 @@ export default function BillDashboard() {
 
       const data = await res.json();
       setBills(data);
+      initialLoadDone.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load bills');
     } finally {
       setLoading(false);
     }
-  }, [category, selectedYear, selectedMonth]);
+  }, [category, selectedYear, selectedMonth, apiFetch]);
 
-  // Fetch available months (only on mount — doesn't change with filters)
   const fetchMonths = useCallback(async () => {
     try {
-      const res = await fetch('/api/bills/months');
+      const res = await apiFetch('/api/bills/months');
       if (res.ok) {
         const data = await res.json();
         setAvailableMonths(data);
       }
     } catch {
-      // sidebar just stays empty if the endpoint fails
+      // sidebar stays empty if endpoint fails
     }
-  }, []);
+  }, [apiFetch]);
 
   useEffect(() => {
     fetchBills();
@@ -79,27 +108,44 @@ export default function BillDashboard() {
   const handleDateSelect = (year: number | null, month: number | null) => {
     setSelectedYear(year);
     setSelectedMonth(month);
-    setLoading(true);
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/bills/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/bills/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
-      // Refresh both bills and month list (counts may change)
       fetchBills();
       fetchMonths();
+      toast('Bill deleted successfully', 'success');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete bill');
+      const msg = err instanceof Error ? err.message : 'Failed to delete bill';
+      toast(msg, 'error');
+      throw err;
     }
   };
 
   const handleUploadSuccess = () => {
     fetchBills();
     fetchMonths();
+    toast('Bill processed and saved!', 'success');
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    fetchBills();
   };
 
   const totalSpent = bills.reduce((sum, b) => sum + b.amount, 0);
+
+  const categoryLabel =
+    selectedYear !== null
+      ? selectedMonth !== null
+        ? new Date(selectedYear, selectedMonth - 1).toLocaleString('en', {
+            month: 'long',
+            year: 'numeric',
+          })
+        : String(selectedYear)
+      : null;
 
   return (
     <div className="dashboard-layout">
@@ -107,47 +153,93 @@ export default function BillDashboard() {
       <div className="dashboard">
         <BillUploader onUploadSuccess={handleUploadSuccess} />
 
-        <div className="dashboard__summary">
-          <h2>
-            {category === 'All' ? 'All Bills' : category}
-          </h2>
-          <p className="dashboard__total">
-            {bills.length} bill{bills.length !== 1 ? 's' : ''} ·{' '}
-            <strong>{totalSpent.toLocaleString()} MMK</strong> total
-          </p>
+        {/* Summary row with mobile sidebar toggle */}
+        <div className="summary-row">
+          <div className="dashboard__summary" style={{ marginBottom: 0 }}>
+            <h2>
+              {category === 'All' ? 'All Bills' : category}
+              {categoryLabel && (
+                <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginLeft: 'var(--space-2)' }}>
+                  · {categoryLabel}
+                </span>
+              )}
+            </h2>
+            <p className="dashboard__total">
+              {!loading && (
+                <>
+                  {bills.length} bill{bills.length !== 1 ? 's' : ''} ·{' '}
+                  <strong>{totalSpent.toLocaleString()} MMK</strong> total
+                </>
+              )}
+            </p>
+          </div>
+
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open date filter"
+          >
+            📅 Filter
+          </button>
         </div>
 
-        <CategoryTabs selected={category} onSelect={(c) => { setCategory(c); setLoading(true); }} />
+        <CategoryTabs
+          selected={category}
+          onSelect={(c) => setCategory(c)}
+        />
 
-        {loading && <p className="dashboard__status">Loading bills...</p>}
-
-        {error && <p className="dashboard__error">Error: {error}</p>}
-
-        {!loading && !error && bills.length === 0 && (
-          <p className="dashboard__empty">
-            No bills found{category !== 'All' ? ` in "${category}"` : ''}
-            {selectedYear !== null
-              ? selectedMonth !== null
-                ? ` for ${new Date(selectedYear, selectedMonth - 1).toLocaleString('en', { month: 'long', year: 'numeric' })}`
-                : ` in ${selectedYear}`
-              : ''}.
-            Upload your first bill above!
-          </p>
+        {/* Error state */}
+        {error && (
+          <div className="dashboard__error" role="alert">
+            <span className="dashboard__error-icon">⚠️</span>
+            <p className="dashboard__error-message">{error}</p>
+            <button className="dashboard__retry-btn" onClick={handleRetry}>
+              🔄 Try Again
+            </button>
+          </div>
         )}
 
-        <div className="dashboard__grid">
-          {bills.map((bill) => (
-            <BillCard key={bill._id} bill={bill} onDelete={handleDelete} />
-          ))}
-        </div>
+        {/* Skeleton loading */}
+        {loading && (
+          <div className="dashboard__grid">
+            {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && !error && bills.length === 0 && (
+          <div className="dashboard__empty">
+            <span className="dashboard__empty-icon" aria-hidden="true">
+              📭
+            </span>
+            <p className="dashboard__empty-text">
+              No bills found{category !== 'All' ? ` in "${category}"` : ''}
+              {categoryLabel ? ` for ${categoryLabel}` : ''}.
+              Upload your first bill above!
+            </p>
+          </div>
+        )}
+
+        {/* Bill grid */}
+        {!loading && !error && bills.length > 0 && (
+          <div className="dashboard__grid">
+            {bills.map((bill) => (
+              <BillCard key={bill._id} bill={bill} onDelete={handleDelete} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Right sidebar */}
+      {/* Sidebar */}
       <Sidebar
         months={availableMonths}
         selectedYear={selectedYear}
         selectedMonth={selectedMonth}
         onSelectDate={handleDateSelect}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
     </div>
   );

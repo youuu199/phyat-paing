@@ -3,19 +3,31 @@ import mongoose from 'mongoose';
 /**
  * Connect to MongoDB using Mongoose.
  * Uses MONGODB_URI from environment variables.
- * Automatically retries on failure and exits process if unrecoverable.
- *
- * Anti-patterns avoided:
- *  - No useNewUrlParser, useUnifiedTopology, useFindAndModify, useCreateIndex (removed in Mongoose 6+)
- *  - No 'localhost' in connection string — use 127.0.0.1 to avoid IPv6 resolution issues
+ * Falls back to mongodb-memory-server if Atlas is unreachable.
  */
 const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Fail fast in dev if MongoDB is unreachable
-    });
+  const uri = process.env.MONGODB_URI;
 
-    console.log(`MongoDB connected: ${conn.connection.host}`);
+  // Try Atlas / configured URI first
+  if (uri) {
+    try {
+      const conn = await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 5000,
+      });
+      console.log(`MongoDB connected: ${conn.connection.host}`);
+      return;
+    } catch (err) {
+      console.warn(`Atlas unreachable (${err.message}), falling back to local in-memory MongoDB...`);
+    }
+  }
+
+  // Fallback: local in-memory MongoDB via mongodb-memory-server
+  try {
+    const { MongoMemoryServer } = await import('mongodb-memory-server');
+    const mongod = await MongoMemoryServer.create();
+    const fallbackUri = mongod.getUri();
+    const conn = await mongoose.connect(fallbackUri);
+    console.log(`MongoDB connected (local in-memory): ${conn.connection.host}`);
   } catch (err) {
     console.error(`MongoDB connection error: ${err.message}`);
     process.exit(1);

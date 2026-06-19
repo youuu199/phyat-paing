@@ -15,7 +15,8 @@ MONGODB_URI=mongodb://127.0.0.1:27017/bill-organizer
 ```
 - If local: use `mongodb://127.0.0.1:27017/bill-organizer` (not localhost — avoids IPv6 issues)
 - If Atlas: use `mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/bill-organizer?retryWrites=true&w=majority`
-- Ask: "Local MongoDB or Atlas?"
+- If neither is available: the app auto-falls-back to `mongodb-memory-server` (in-memory, data lost on restart)
+- Ask: "Local MongoDB, Atlas, or use auto-fallback?"
 
 ### 2. Server Port
 ```
@@ -35,33 +36,33 @@ CLOUDINARY_API_SECRET=<api-secret>
 - **API secret**: click the eye icon to reveal it — treat like a password
 - Remind: these keys should NEVER be committed to git (already in .gitignore)
 
-### 4. Google Cloud Vision
+### 4. Cohere API Key
 ```
-GOOGLE_CLIENT_EMAIL=<service-account-email>
-GOOGLE_PRIVATE_KEY=<private-key-with-literal-newlines>
+COHERE_API_KEY=<key-from-dashboard.cohere.com>
 ```
-- Can reuse the same Firebase service account if it has Vision API permissions
-- Alternatively, set `GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json`
-- Warn: **API keys do NOT work for text detection** — must use service account credentials
-
-### 5. Gemini API Key
-```
-GEMINI_API_KEY=<key-from-ai-google-dev>
-```
-- Get from: https://aistudio.google.com/apikey or https://ai.google.dev
+- Get from: https://dashboard.cohere.com/api-keys
 - This is a simple string (not a JSON object or service account)
-- Model string to use: `gemini-2.5-flash` (for speed) or `gemini-2.5-pro` (for accuracy)
+- Model string to use: `command-a-plus-05-2026`
+
+### 5. JWT Secret
+```
+JWT_SECRET=<random-256-bit-secret>
+```
+- Generate a random secret: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+- Used to sign and verify JWT tokens for user authentication
+- Keep this secret — do NOT commit
 
 ## After Writing .env
 
 Verify with:
 ```bash
-cd server && node -e "import 'dotenv/config'; console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'); console.log('CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME ? '✓ set' : '✗ MISSING'); console.log('GEMINI_KEY:', process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'); console.log('VISION_CREDS:', (process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_APPLICATION_CREDENTIALS) ? '✓ set' : '✗ MISSING')"
+cd server && node -e "import 'dotenv/config'; console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'); console.log('CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME ? '✓ set' : '✗ MISSING'); console.log('COHERE_KEY:', process.env.COHERE_API_KEY ? '✓ set' : '✗ MISSING'); console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✓ set' : '✗ MISSING'); console.log('PORT:', process.env.PORT || 5000); console.log('OCR: Tesseract.js (offline — no API key needed)')"
 ```
 
 ## Anti-Pattern Warnings
 - ❌ `localhost` instead of `127.0.0.1` in MongoDB URI
 - ❌ `useNewUrlParser`, `useUnifiedTopology` in Mongoose options (removed in v6+)
-- ❌ Using API key for Google Cloud Vision text detection (requires service account)
 - ❌ Using `upload()` with a Buffer instead of `upload_stream()` in Cloudinary
-- ❌ `gemini-pro` model name (legacy 1.0 — use `gemini-2.5-flash`)
+- ❌ `command-nightly` in production (use `command-a-plus-05-2026`)
+- ❌ `CohereClient` (v1) instead of `CohereClientV2` (v2)
+- ❌ Tesseract.js single worker — the app uses a scheduler pool automatically, no env config needed

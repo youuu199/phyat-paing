@@ -9,32 +9,32 @@
 | Database | Mongoose 8.x | `import mongoose from 'mongoose'` |
 | File Upload | multer | `import multer from 'multer'` |
 | CORS | cors | `import cors from 'cors'` |
-| Image Storage | firebase-admin | `import { initializeApp, cert } from 'firebase-admin/app'` |
-| OCR | @google-cloud/vision | `import vision from '@google-cloud/vision'` |
-| AI | @google/genai | `import { GoogleGenAI } from '@google/genai'` |
+| Image Storage | cloudinary | `import { v2 as cloudinary } from 'cloudinary'` |
+| OCR | tesseract.js | `import Tesseract from 'tesseract.js'` |
+| AI | cohere-ai | `import { CohereClientV2 } from 'cohere-ai'` |
 
 ## Allowed APIs (from Phase 0 documentation discovery)
 
-### Firebase Admin SDK
-- `initializeApp({ credential: cert(serviceAccount), storageBucket: '...' })` from `firebase-admin/app`
-- `getStorage().bucket()` from `firebase-admin/storage`
-- `bucket.file(destination).save(buffer, { contentType })` → upload from Buffer
-- `file.makePublic()` → make file publicly readable
-- `getDownloadURL(file)` from `firebase-admin/storage` → returns `https://firebasestorage.googleapis.com/v0/b/...`
-- **Anti-pattern**: Do NOT use `admin.storage().bucket()` (old namespace). Do NOT use `bucket.upload()` with a Buffer (use `file.save()`).
+### Cloudinary (Image Storage)
+- `cloudinary.config({ cloud_name, api_key, api_secret, secure: true })` — configure from env vars
+- `cloudinary.uploader.upload_stream(options, callback)` — upload from Buffer (wrap in Promise)
+- `cloudinary.uploader.destroy(publicId)` — delete an image
+- `cloudinary.url(publicId, transforms)` — build transformed URL
+- **Anti-pattern**: Do NOT use `upload()` with a Buffer (expects file path or URL). Always wrap `upload_stream()` in a Promise. Import as `{ v2 as cloudinary }`.
 
-### Google Cloud Vision
-- `new vision.ImageAnnotatorClient({ keyFilename })` OR `{ credentials: { client_email, private_key } }`
-- `client.documentTextDetection(image)` — image can be Buffer OR `{ image: { content: base64 } }` OR `{ image: { source: { imageUri } } }`
-- Response: `result[0].fullTextAnnotation.text`
-- Language hints: `{ imageContext: { languageHints: ['en', 'my'] } }`
-- **Anti-pattern**: Do NOT use API key (requires service account). Prefer `documentTextDetection` over `textDetection` for bills.
+### Tesseract.js (OCR)
+- `Tesseract.createScheduler()` — synchronous, NOT awaited. Creates a worker pool for concurrent OCR.
+- `Tesseract.createWorker('eng+mya', 1, { cachePath })` — create a worker with English + Myanmar language support
+- `scheduler.addWorker(worker)` — add worker to pool
+- `scheduler.addJob('recognize', imageBuffer)` — recognize text from Buffer (concurrent-safe)
+- Response: `{ data: { text, confidence, words, lines, paragraphs } }`
+- **Anti-pattern**: Do NOT use a single `createWorker()` + `worker.recognize()` for concurrent requests — it serializes jobs and causes timeouts. Do NOT use `@google-cloud/vision`.
 
-### Google Gemini 2.5
-- `new GoogleGenAI({ apiKey })` from `@google/genai`
-- `ai.models.generateContent({ model: 'gemini-2.5-flash', contents, config: { systemInstruction, responseMimeType: 'application/json', responseSchema } })`
-- `JSON.parse(response.text)` to get the structured object
-- **Anti-pattern**: Do NOT use `gemini-pro` (legacy). `systemInstruction` goes inside `config`, not at top level.
+### Cohere Command A
+- `new CohereClientV2({ token })` from `cohere-ai`
+- `co.chat({ model: 'command-a-plus-05-2026', messages: [{ role: 'user', content }], response_format: { type: 'json_object', schema } })`
+- `JSON.parse(response.message.content[0].text)` to get the structured object
+- **Anti-pattern**: Do NOT use `CohereClient` (v1). Do NOT use `system` role in messages. Do NOT forget `response_format.schema` — `{ type: "json_object" }` alone doesn't enforce structure.
 
 ### Mongoose
 - `mongoose.connect(uri)` — do NOT pass `useNewUrlParser`, `useUnifiedTopology`, `useFindAndModify`, `useCreateIndex` (removed in Mongoose 6+)
@@ -92,45 +92,45 @@ pyat-paing/
 
 ---
 
-## Phase 2: Backend Boilerplate (Express + MongoDB + Firebase Init)
+## Phase 2: Backend Boilerplate (Express + MongoDB + Cloudinary Init)
 
 ### What to implement
-1. `server/package.json` with dependencies: express, cors, mongoose, dotenv, firebase-admin, @google-cloud/vision, @google/genai, multer
+1. `server/package.json` with dependencies: express, cors, mongoose, dotenv, cloudinary, @google-cloud/vision, cohere-ai, multer
 2. `server/src/app.js` — Express app with cors, express.json(), error handler
 3. `server/src/server.js` — entry point that imports app and listens on PORT
 4. `server/src/config/db.js` — Mongoose connect wrapper
-5. `server/src/config/firebase.js` — Firebase Admin init using env vars
+5. `server/src/config/cloudinaryStorage.js` — Cloudinary config using env vars
 
 ### Documentation references
 - Express boilerplate: official Express docs — `app.use(express.json())`, 4-arg error middleware
 - Mongoose connect: `mongoose.connect(uri)` without deprecated options
-- Firebase init: `initializeApp({ credential: cert(serviceAccount), storageBucket })`
+- Cloudinary config: `cloudinary.config({ cloud_name, api_key, api_secret, secure: true })`
 
 ### Verification
 - [ ] `node server/src/server.js` starts without crash (will fail on DB if no MongoDB, but Express should listen)
 - [ ] `console.log('MongoDB connected')` prints on successful connection
-- [ ] Firebase init does not throw (will succeed even without actual GCP project if `storageBucket` is set)
+- [ ] Cloudinary config does not throw (validates at first API call, not at init time)
 
 ---
 
-## Phase 3: Image Upload Logic (Multer + Firebase Storage)
+## Phase 3: Image Upload Logic (Multer + Cloudinary Storage)
 
 ### What to implement
 1. `server/src/middleware/upload.js` — multer config with memoryStorage (stores file as Buffer on `req.file`)
-2. `server/src/utils/firebaseStorage.js` — `uploadToFirebase(file)` function that:
+2. `server/src/utils/cloudinaryStorage.js` — `uploadToCloudinary(buffer)` function that:
    - Takes multer file object `{ buffer, mimetype, originalname }`
    - Calls `bucket.file(path).save(buffer, { contentType })`
    - Calls `file.makePublic()` OR `getDownloadURL(file)`
    - Returns the public URL string
-3. `server/src/routes/upload.js` — POST `/api/upload` route using multer middleware + Firebase upload
+3. `server/src/routes/upload.js` — POST `/api/upload` route using multer middleware + Cloudinary upload
 
 ### Documentation references
 - Multer memoryStorage: `multer({ storage: multer.memoryStorage() })` — file is available as `req.file.buffer`
-- Firebase file.save(): `bucket.file('uploads/xxx.jpg').save(buffer, { contentType })`
-- Firebase makePublic() + public URL pattern: `https://storage.googleapis.com/${bucket.name}/${destination}`
+- Cloudinary upload_stream(): `cloudinary.uploader.upload_stream(options, callback)` wrapped in Promise
+- Cloudinary secure URL: `result.secure_url` — Cloudinary stores publicId for later deletion
 
 ### Verification
-- [ ] POST multipart/form-data to `/api/upload` saves file to Firebase
+- [ ] POST multipart/form-data to `/api/upload` saves file to Cloudinary
 - [ ] Response contains the public URL of the uploaded image
 - [ ] Opening the URL in browser shows the image
 
@@ -140,25 +140,27 @@ pyat-paing/
 
 ### What to implement
 1. `server/src/utils/ocrService.js` — `extractTextFromImage(imageBuffer)` function:
-   - Creates Vision client
-   - Calls `client.documentTextDetection(imageBuffer)` with language hints `['en', 'my']`
-   - Returns `result[0].fullTextAnnotation.text`
-2. `server/src/utils/geminiService.js` — `classifyBillData(rawText)` function:
-   - Creates `GoogleGenAI({ apiKey: GEMINI_API_KEY })`
-   - Calls `ai.models.generateContent()` with system instruction + user prompt containing the raw text
-   - Uses `responseMimeType: 'application/json'` and `responseSchema` matching: `{ title: String, amount: Number, category: String }`
+   - Creates a Tesseract scheduler with a pool of workers (`eng+mya` language)
+   - Calls `scheduler.addJob('recognize', imageBuffer)` for concurrent-safe OCR
+   - Returns extracted text string
+2. `server/src/utils/cohereService.js` — `classifyBillData(rawText)` function:
+   - Creates `CohereClientV2({ token: COHERE_API_KEY })`
+   - Calls `co.chat()` with user prompt containing the raw text
+   - Uses `response_format: { type: 'json_object', schema }` matching: `{ title: String, amount: Number, category: String }`
    - Categories: Electricity, Water, Internet, Phone, Shopping, Other
+   - Finds text block by `.type === 'text'` (Cohere may wrap in thinking blocks)
    - Returns parsed JSON object
 
 ### Documentation references
-- Vision: `client.documentTextDetection({ image: { content: base64 }, imageContext: { languageHints: ['en', 'my'] } })`
-- Gemini: `ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction, responseMimeType: 'application/json', responseSchema } })`
+- Tesseract: `createScheduler()` → `createWorker('eng+mya')` → `addWorker()` → `addJob('recognize', buffer)`
+- Cohere: `co.chat({ model: 'command-a-plus-05-2026', messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object', schema: { ... } } })`
 
 ### Verification
 - [ ] Calling `extractTextFromImage()` with a test bill image returns raw text containing amounts/dates
 - [ ] Calling `classifyBillData()` with Myanmar or English bill text returns valid JSON
 - [ ] JSON output has correct shape: `{ title, amount, category }`
 - [ ] Category is one of the valid enum values
+- [ ] Concurrent uploads don't timeout (scheduler pool handles multiple jobs)
 
 ---
 
