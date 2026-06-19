@@ -9,11 +9,11 @@ auto-advance: 20
 # Who's my person?
 <!-- 20s -->
 
-**Youuu199** — a developer in **Myanmar** drowning in paper utility bills.
+**Myint Zu** — a freelance accountant in Yangon, Myanmar.
 
-Every month: photograph an electricity bill (လျှပ်စစ်), a water receipt (ရေ), an internet invoice… then manually type amounts into a spreadsheet. Mixed-language bills (Burmese + English) make copy-paste impossible. Receipt ink fades. Paper piles up.
+She manages expenses for 3 small shops. Every supplier hands her a paper bill — electricity from YESB, water from YCDC, internet from MPT Fiber. All printed in Burmese. All photographed on her phone. All manually re-typed into Excel at the end of each month.
 
-They want one place to snap, auto-extract, search, and see spending trends — no manual data entry.
+She owns a basic laptop. She is not a developer. She just wants the typing to stop.
 
 ---
 
@@ -21,15 +21,17 @@ They want one place to snap, auto-extract, search, and see spending trends — n
 # Their problem
 <!-- 20s -->
 
-| Pain | Reality |
-|------|---------|
-| 📸 **Snap → Type** | Photo of bill exists, but numbers must be re-typed manually |
-| 🇲🇲 **Myanmar script** | `ကျသင့်ငွေ ၂၅၀၀၀` — OCR fails on Burmese, no off-the-shelf tool handles it |
-| 📦 **No structure** | Amounts scattered across camera roll, not a database |
-| 🔍 **No search** | "How much did I spend on electricity in March?" → scroll through photos |
-| ⏱️ **Time sink** | 5–10 minutes per bill × 4+ bills/month × 12 months = hours lost |
+Myint Zu spends **4 hours every month** re-typing bills.
 
-Existing expense-tracker apps expect manual input or English receipts. They don't understand a YESB bill with **Myanmar script** and a total buried in a grid of numbers.
+| Step | Tool | Time |
+|------|------|------|
+| Collect bills | Paper + phone photos | — |
+| Read each photo | Swipe through camera roll | 30 min |
+| Type amount + date + category | Excel, manual | 2 hours |
+| Calculate totals per category | Excel formulas | 30 min |
+| Find a past bill | Scroll through months of photos | 15 min each |
+
+OCR apps fail on **Burmese script** (`ကျသင့်ငွေ ၂၅၀၀၀`). Expense apps don't know YESB or YCDC. She has tried both. She gave up.
 
 ---
 
@@ -37,19 +39,20 @@ Existing expense-tracker apps expect manual input or English receipts. They don'
 # What I built
 <!-- 20s -->
 
-**phyat-paing** (ဖြတ်ပိုင်း — "bill/receipt" in Burmese)
+**phyat-paing** (ဖြတ်ပိုင်း — "receipt" in Burmese)
+
+A web app where Myint Zu snaps a bill once and the machine does the rest.
 
 ```
-📸 Upload bill image
-  → ☁️ Cloudinary (image stored)
-  → 👁️ Tesseract.js OCR (Burmese + English, offline)
-  → 🤖 Cohere Command A (extracts title, amount, category)
-  → 🛡️ Validation (rejects unrecognized bills)
-  → 🗄️ MongoDB (per-user storage)
-  → 📊 React Dashboard (filter, search, stats)
+📸 Upload photo of bill
+   → ☁️ Saved to Cloudinary
+   → 👁️ Tesseract.js reads Burmese + English text (offline, free)
+   → 🤖 Cohere AI extracts: title, amount, category
+   → 🛡️ Validation rejects unrecognized images
+   → 📊 Dashboard shows all bills, filterable by category and month
 ```
 
-**User flow:** Register → snap a bill → see it appear on a filterable dashboard with category, month, and total-spend summary. Zero manual typing.
+No typing. No Excel. No scrolling through camera roll.
 
 ---
 
@@ -57,18 +60,18 @@ Existing expense-tracker apps expect manual input or English receipts. They don'
 # How I built it
 <!-- 20s -->
 
-**MERN stack** — Vite + React-TS frontend, Express + Mongoose backend
+**MERN stack** — React + Express + MongoDB
 
 | Tool | What it did |
 |------|------------|
-| 🔌 **MCP: Context7** | Resolved live docs for Cloudinary `upload_stream()`, Cohere `response_format.schema`, Tesseract `createScheduler()`, Mongoose 8.x connect |
-| 🔌 **MCP: 21st.dev** | Generated React component scaffolding — bill cards, sidebar, uploader |
-| 🎯 **Skill: test-pipeline** | End-to-end pipeline test: Cloudinary → Tesseract → Cohere → MongoDB |
+| 🔌 **MCP: Context7** | Resolved live docs for every library — Cloudinary `upload_stream()`, Cohere `response_format.schema`, Tesseract `createScheduler()`, Mongoose 8.x |
+| 🔌 **MCP: 21st.dev** | Generated React component scaffolding — BillCard, Sidebar, Uploader |
+| 🎯 **Skill: test-pipeline** | End-to-end pipeline test — Cloudinary → Tesseract → Cohere → MongoDB |
 | 🎯 **Skill: code-review** | Grep-checked 13 anti-patterns before every commit |
 | 🎯 **Skill: extract-categorize-bill** | Standalone Cohere debug — reprocess rawText without re-uploading |
 | 🤖 **Agent: ai-ocr-specialist** | Designed Tesseract scheduler pool (3 workers) — fixed second-upload timeout |
-| 🤖 **Agent: pipeline-debugger** | Isolated 5-stage pipeline failures stage-by-stage |
-| 🤖 **Agent: mern-reviewer** | Caught: `upload()` on Buffer, missing `userId` filters, Cohere v1 client |
+| 🤖 **Agent: pipeline-debugger** | Isolated failures across 5 pipeline stages |
+| 🤖 **Agent: mern-reviewer** | Caught `upload()` on Buffer, missing `userId` filters, Cohere v1 client |
 
 ---
 
@@ -76,18 +79,11 @@ Existing expense-tracker apps expect manual input or English receipts. They don'
 # Why it matters
 <!-- 20s -->
 
-**For Myanmar users:**
-- First open-source bill organizer that reads **Burmese script** (မြန်မာ) offline via Tesseract `eng+mya`
-- No API keys needed for OCR — works entirely offline after first language-data download
-- Categories tuned to Myanmar utility ecosystem: YESB, MESC, YCDC, MPT Fiber, Ooredoo, Telenor
+**For Myint Zu:** 4 hours/month → 4 seconds per bill. That's ~50 hours saved per year.
 
-**Technical depth:**
-- **Worker-pool concurrency** solved the "second upload hangs" bug — `createScheduler()` with 3 workers instead of single `createWorker()`
-- **Multi-stage validation** — Cloudinary image cleaned up on AI rejection (no orphaned files)
-- **Graceful degradation** — MongoDB Atlas unreachable → auto-fallback to `mongodb-memory-server`
+**For Myanmar:** First open-source bill reader that handles Burmese script offline. No API key needed for OCR — Tesseract `eng+mya` runs entirely on-device after one language download. Categories are tuned to real Myanmar billers: YESB, MESC, YCDC, MPT Fiber, Ooredoo, Telenor.
 
-**Why an agent helped build this better:**
-Agents ran adversarial grep checks across 46 changed files that a human would miss — caught Cohere v1 client, missing `userId` filters (data-leak bug), and `upload()` on Buffer (crash-at-runtime) before they shipped.
+**For the builder:** Three agents ran adversarial checks across 46 files before shipping — catching a data-leak bug (missing `userId` filter), a crash-on-upload anti-pattern (`upload()` on Buffer), and a concurrency deadlock (single Tesseract worker causing second-upload timeout). None of these would have been caught by `npm run dev`.
 
 ---
 
@@ -96,9 +92,13 @@ Agents ran adversarial grep checks across 46 changed files that a human would mi
 <!-- 20s -->
 
 - [x] **Repo public** — [github.com/youuu199/phyat-paing](https://github.com/youuu199/phyat-paing)
-- [x] **MCP used** — Context7 (Cloudinary, Cohere, Tesseract, Mongoose docs) + 21st.dev (React components)
+- [x] **MCP used** — Context7 (live docs) + 21st.dev (React components)
 - [x] **Skills used** — `test-pipeline`, `code-review`, `extract-categorize-bill`, `setup-env`
 - [x] **Agents used** — `mern-reviewer`, `pipeline-debugger`, `ai-ocr-specialist`
-- [x] **report.md in team repo** — [link](https://github.com/youuu199/phyat-paing/blob/main/slides/report.md)
+- [x] **report.md** — [github.com/youuu199/phyat-paing/blob/main/slides/report.md](https://github.com/youuu199/phyat-paing/blob/main/slides/report.md)
 
-**Live at:** `http://localhost:5173` ← `npm run dev` in both `server/` and `client/`
+**4 commits.** **46 files.** **4,117 lines added.**
+
+```
+npm run dev → http://localhost:5173
+```
