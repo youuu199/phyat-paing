@@ -1,0 +1,24 @@
+{
+  "name": "bill-organizer-server",
+  "version": "1.0.0",
+  "description": "Smart All-in-One Bill Organizer — Express backend",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/vision": "^5.3.7",
+    "@google/genai": "^2.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^14.0.0",
+    "mongoose": "^9.7.1",
+    "multer": "^2.2.0"
+  }
+}
