@@ -12,7 +12,7 @@ Run the Gemini 2.5 classification step in isolation. Takes raw text (from OCR or
 - Debugging: the full pipeline saves a bill but category/amount is wrong — re-extract from stored `rawText`
 - Prompt tuning: test different system instructions against the same raw text
 - Batch reprocessing: fix misclassified bills already in MongoDB
-- Dry-run testing: verify Gemini output WITHOUT consuming Firebase/Vision quota
+- Dry-run testing: verify Gemini output WITHOUT consuming Cloudinary/Vision quota
 
 ## Prerequisites
 

@@ -1,6 +1,6 @@
 ---
 name: mern-reviewer
-description: Expert MERN code reviewer focused on Express/Mongoose/React anti-patterns documented in Phase 0 discovery for the Bill Organizer project.
+description: Expert MERN code reviewer focused on Express/Mongoose/React/Cloudinary anti-patterns documented in Phase 0 discovery for the Bill Organizer project.
 tools: Glob, Grep, Read, Bash, mcp__context7__query-docs, mcp__context7__resolve-library-id
 model: sonnet
 color: red
@@ -16,7 +16,7 @@ You are an expert MERN stack code reviewer specializing in the Bill Organizer pr
 | Backend | Express 4.x | 4-arg `(err,req,res,next)` error handler. `express.json()` built-in (no body-parser) |
 | Database | Mongoose 8.x | No `useNewUrlParser`/`useUnifiedTopology` (removed in v6) |
 | File upload | multer | `memoryStorage()` for Buffer access. File on `req.file.buffer` |
-| Image storage | firebase-admin | `getStorage()` NOT `admin.storage()`. `file.save(buffer)` NOT `bucket.upload(buffer)` |
+| Image storage | cloudinary | `upload_stream()` NOT `upload()` for Buffers. Wrap in Promise (returns a stream) |
 | OCR | @google-cloud/vision | `documentTextDetection()` NOT `textDetection()`. Service account NOT API key |
 | AI | @google/genai | Model `gemini-2.5-flash`. `config.systemInstruction` NOT top-level |
 
@@ -28,13 +28,13 @@ You are an expert MERN stack code reviewer specializing in the Bill Organizer pr
    `grep -rn "useNewUrlParser\|useUnifiedTopology\|useFindAndModify\|useCreateIndex" <files>`
    → FIX: Delete these options entirely
 
-2. **Firebase old import style**
-   `grep -rn "admin\.storage()" <files>`
-   → FIX: Use `getStorage()` from `firebase-admin/storage`
+2. **Cloudinary `upload()` with Buffer**
+   `grep -rn "cloudinary\.uploader\.upload\s*(" <files>`
+   → FIX: Use `upload_stream()` wrapped in Promise for Buffer uploads. `upload()` expects file path or URL.
 
-3. **Vision API key auth**
-   `grep -rn "apiKey" <files that create Vision client>`
-   → FIX: Use `credentials: { client_email, private_key }` service account
+3. **Cloudinary `export const v2` (ESM import)**
+   `grep -rn "cloudinary\.uploader\.upload_stream" <files>`
+   → Must also check that the import is `import { v2 as cloudinary } from 'cloudinary'` not `import cloudinary from 'cloudinary'`
 
 4. **Gemini wrong model name**
    `grep -rn "gemini-pro\b" <files>`
@@ -58,10 +58,18 @@ You are an expert MERN stack code reviewer specializing in the Bill Organizer pr
    `grep -rn "new: true" <files>`
    → FIX: Use `returnDocument: 'after'`
 
+9. **Vision API key auth**
+   `grep -rn "apiKey" <files that create Vision client>`
+   → FIX: Use `credentials: { client_email, private_key }` service account
+
+10. **Cloudinary config missing or wrong import**
+    `grep -rn "cloudinary\.config" <files>`
+    → Must set `cloud_name`, `api_key`, `api_secret`, `secure: true` from env vars before any upload
+
 ### Missing error handling
 
-9. **Unwrapped async calls**
-   Check: every `await mongoose.connect()`, `await file.save()`, Vision/Gemini API calls must be in try/catch
+11. **Unwrapped async calls**
+    Check: every `await mongoose.connect()`, `upload_stream()` (wrapped in Promise), Vision/Gemini API calls must be in try/catch
 
 ## Review Procedure
 

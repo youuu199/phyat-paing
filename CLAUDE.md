@@ -4,7 +4,7 @@
 
 A MERN web app that lets users upload images of utility bills/receipts, extracts data via OCR (Google Cloud Vision) and AI classification (Gemini 2.5), and displays them on a filterable dashboard.
 
-**Data flow:** Upload image → Firebase Storage → Google Vision OCR → Gemini AI → MongoDB → React Dashboard
+**Data flow:** Upload image → Cloudinary → Google Vision OCR → Gemini AI → MongoDB → React Dashboard
 
 ## Tech Stack (exact versions — do NOT use alternatives)
 
@@ -14,7 +14,7 @@ A MERN web app that lets users upload images of utility bills/receipts, extracts
 | Backend | Express 4.x | `import express from 'express'` |
 | Database | Mongoose 8.x | No `useNewUrlParser`/`useUnifiedTopology` (removed in v6+) |
 | File Upload | multer | `memoryStorage()` — file on `req.file.buffer` |
-| Image Storage | firebase-admin | `getStorage()` NOT `admin.storage()` |
+| Image Storage | cloudinary | `upload_stream()` NOT `upload()` for Buffers |
 | OCR | @google-cloud/vision | `documentTextDetection()` NOT `textDetection()` |
 | AI | @google/genai | Model `gemini-2.5-flash`. `config.systemInstruction` NOT top-level |
 | CORS | cors | `npm install cors` (not built into Express) |
@@ -39,8 +39,8 @@ pyat-paing/
 │   │   ├── controllers/           # Request handlers
 │   │   ├── models/                # Mongoose models
 │   │   ├── middleware/            # Custom middleware (multer, etc.)
-│   │   ├── config/                # db.js, firebase.js
-│   │   └── utils/                 # ocrService.js, geminiService.js, firebaseStorage.js
+│   │   ├── config/                # db.js, firebase.js (legacy), cloudinaryStorage.js
+│   │   └── utils/                 # ocrService.js, geminiService.js, cloudinaryStorage.js, firebaseStorage.js (legacy)
 │   ├── .env.example               # Template — copy to .env
 │   └── package.json               # type: "module" (ESM)
 ├── .gitignore                     # node_modules, .env, dist/, service account keys
@@ -64,26 +64,49 @@ cd server && node src/seed.js
 
 ## Allowed APIs (Phase 0 verified)
 
-### Firebase Admin SDK
+### Cloudinary (Image Storage)
 ```javascript
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getStorage, getDownloadURL } from 'firebase-admin/storage';
+import { v2 as cloudinary } from 'cloudinary';
 
-initializeApp({
-  credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,   // "project-id.appspot.com" — NOT gs://
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
-const bucket = getStorage().bucket();
-const file = bucket.file('uploads/filename.jpg');
-await file.save(buffer, { contentType: 'image/jpeg' });
-await file.makePublic();
-const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+// Upload from Buffer (multer memoryStorage)
+function uploadFromBuffer(buffer, options = {}) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+    stream.end(buffer);
+  });
+}
+
+const result = await uploadFromBuffer(buffer, {
+  folder: 'bill-organizer',
+  public_id: `bill_${Date.now()}`,
+  resource_type: 'image',
+});
+// → { secure_url, public_id, width, height, format, bytes }
+
+// Delete
+await cloudinary.uploader.destroy(publicId, { invalidate: true });
+
+// Transform URL (local URL builder — no API call)
+const transformedUrl = cloudinary.url(publicId, {
+  fetch_format: 'auto',  // f_auto
+  quality: 'auto',       // q_auto
+  secure: true,
+});
 ```
-- ❌ Do NOT use `admin.storage().bucket()` (old namespace import)
-- ❌ Do NOT pass `gs://` URI to `bucket()`
-- ❌ Do NOT use `bucket.upload()` with a Buffer — use `file.save()`
-- ❌ Do NOT use Firebase Web API key — must use service account JSON
+- ❌ Do NOT use `cloudinary.uploader.upload(buffer)` — expects file path or URL, not Buffer
+- ❌ Do NOT call `upload()` with a raw Buffer as first argument
+- ❌ `upload_stream()` returns a stream, NOT a Promise — wrap in Promise
+- ❌ Do NOT look for `uploader.uploadBuffer()` — it does not exist
 
 ### Google Cloud Vision
 ```javascript
@@ -186,8 +209,9 @@ app.listen(process.env.PORT || 5000);
 ```
 MONGODB_URI=mongodb://127.0.0.1:27017/bill-organizer
 PORT=5000
-FIREBASE_STORAGE_BUCKET=<project-id>.appspot.com
-FIREBASE_SERVICE_ACCOUNT=<full single-line JSON>
+CLOUDINARY_CLOUD_NAME=<cloud-name>
+CLOUDINARY_API_KEY=<api-key>
+CLOUDINARY_API_SECRET=<api-secret>
 GOOGLE_CLIENT_EMAIL=<service-account-email>
 GOOGLE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
 GEMINI_API_KEY=<key-from-ai.google.dev>
@@ -202,8 +226,8 @@ grep -rn "useNewUrlParser\|useUnifiedTopology\|useFindAndModify\|useCreateIndex"
 # MongoDB localhost (should be 127.0.0.1)
 grep -rn "localhost:27017" server/src/
 
-# Firebase old import style
-grep -rn "admin\.storage()" server/src/
+# Cloudinary upload() with Buffer (use upload_stream() instead)
+grep -rn "cloudinary\.uploader\.upload\s*(" server/src/
 
 # Gemini wrong model name
 grep -rn "gemini-pro\b" server/src/
@@ -213,6 +237,9 @@ grep -rn "client\.textDetection" server/src/
 
 # body-parser package (not needed)
 grep -rn "body-parser" server/src/ server/package.json
+
+# Cloudinary missing v2 import
+grep -rn "from 'cloudinary'" server/src/ | grep -v "v2 as"
 ```
 
 ## Development Workflow
@@ -220,8 +247,8 @@ grep -rn "body-parser" server/src/ server/package.json
 1. **Before writing any code:** Resolve docs via Context7 MCP for the library in question
 2. **Small commits per phase:** See `.claude/plans/01-bill-organizer.md` for the 6-phase plan
 3. **Vite proxy:** When frontend calls `/api/*`, add `server.proxy` in `vite.config.ts` to forward to `http://localhost:5000`
-4. **Error handling:** Every `await mongoose.connect()`, `await file.save()`, Vision/Gemini call must be in try/catch
-5. **Never commit:** `.env`, `serviceAccountKey.json`, `*-service-account.json`
+4. **Error handling:** Every `await mongoose.connect()`, `cloudinary.upload_stream()` (wrapped in Promise), Vision/Gemini call must be in try/catch
+5. **Never commit:** `.env`, `serviceAccountKey.json`, `*-service-account.json`, API keys/secrets
 
 ## Project Skills & Agents
 
@@ -231,16 +258,16 @@ grep -rn "body-parser" server/src/ server/package.json
 |-------|-----|
 | `bill-organizer:setup-env` | Configure all .env variables interactively |
 | `bill-organizer:db-seed` | Seed MongoDB with 12 realistic test bills |
-| `bill-organizer:test-pipeline` | Test upload→Firebase→Vision→Gemini→MongoDB end-to-end |
+| `bill-organizer:test-pipeline` | Test upload→Cloudinary→Vision→Gemini→MongoDB end-to-end |
 | `bill-organizer:code-review` | Grep-check for known anti-patterns |
 | `bill-organizer:extract-categorize-bill` | Run Gemini 2.5 classification step standalone — debug AI output, reprocess stored rawText |
-| `bill-organizer:upload-firebase-storage` | Test multer→Firebase Storage upload in isolation — verify connectivity, bucket permissions, public URLs |
+| `bill-organizer:upload-cloudinary-storage` | Test multer→Cloudinary upload in isolation — verify `upload_stream()`, credentials, URL generation |
 
 ### Agents
 
 | Agent | Color | Focus |
 |-------|-------|-------|
-| `mern-reviewer` | red | MERN anti-pattern detection (Mongoose deprecated opts, Firebase old syntax, Gemini wrong model) |
-| `pipeline-debugger` | yellow | Stage-by-stage pipeline failure isolation (Multer→Firebase→Vision→Gemini→MongoDB) |
+| `mern-reviewer` | red | MERN + Cloudinary anti-pattern detection (Mongoose deprecated opts, Cloudinary upload() vs upload_stream(), Gemini wrong model) |
+| `pipeline-debugger` | yellow | Stage-by-stage pipeline failure isolation (Multer→Cloudinary→Vision→Gemini→MongoDB) |
 | `backend-db-specialist` | blue | Express routing, Mongoose schema design, MongoDB aggregation, multer config, REST API patterns |
 | `ai-ocr-specialist` | green | Vision OCR text detection, Gemini structured output, Myanmar+English prompt engineering, image preprocessing |

@@ -1,6 +1,6 @@
 ---
 name: bill-organizer:setup-env
-description: Interactive walkthrough to configure all .env variables for the Smart Bill Organizer. Activates when user needs to set up API keys, Firebase, MongoDB URI, or any environment variables for this project.
+description: Interactive walkthrough to configure all .env variables for the Smart Bill Organizer. Activates when user needs to set up API keys, Cloudinary, MongoDB URI, or any environment variables for this project.
 ---
 
 # Setup Environment Variables — Bill Organizer
@@ -23,15 +23,17 @@ PORT=5000
 ```
 - Default `5000` is fine unless the user has a conflict. Ask if they want a different port.
 
-### 3. Firebase Admin SDK
+### 3. Cloudinary (Image Storage)
 ```
-FIREBASE_STORAGE_BUCKET=<project-id>.appspot.com
-FIREBASE_SERVICE_ACCOUNT=<full JSON string>
+CLOUDINARY_CLOUD_NAME=<cloud-name>
+CLOUDINARY_API_KEY=<api-key>
+CLOUDINARY_API_SECRET=<api-secret>
 ```
-- **Storage bucket**: format is `<project-id>.appspot.com` (NOT `gs://...`)
-- **Service account**: the ENTIRE service account JSON, compressed to a single line
-- Warn the user: the private key MUST have literal `\n` newlines — escaped `\\n` will fail
-- Remind: this key should NEVER be committed to git (already in .gitignore)
+- Get these from: https://console.cloudinary.com/app/settings/api-keys
+- Or use the single-connection-string form: `CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME`
+- **Cloud name**: found at the top of your Cloudinary dashboard
+- **API secret**: click the eye icon to reveal it — treat like a password
+- Remind: these keys should NEVER be committed to git (already in .gitignore)
 
 ### 4. Google Cloud Vision
 ```
@@ -54,12 +56,12 @@ GEMINI_API_KEY=<key-from-ai-google-dev>
 
 Verify with:
 ```bash
-cd server && node -e "import 'dotenv/config'; console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'); console.log('FIREBASE_BUCKET:', process.env.FIREBASE_STORAGE_BUCKET ? '✓ set' : '✗ MISSING'); console.log('GEMINI_KEY:', process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'); console.log('VISION_CREDS:', (process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_APPLICATION_CREDENTIALS) ? '✓ set' : '✗ MISSING')"
+cd server && node -e "import 'dotenv/config'; console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'); console.log('CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME ? '✓ set' : '✗ MISSING'); console.log('GEMINI_KEY:', process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'); console.log('VISION_CREDS:', (process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_APPLICATION_CREDENTIALS) ? '✓ set' : '✗ MISSING')"
 ```
 
 ## Anti-Pattern Warnings
 - ❌ `localhost` instead of `127.0.0.1` in MongoDB URI
 - ❌ `useNewUrlParser`, `useUnifiedTopology` in Mongoose options (removed in v6+)
 - ❌ Using API key for Google Cloud Vision text detection (requires service account)
-- ❌ Using Firebase Web API key instead of service account for Admin SDK
+- ❌ Using `upload()` with a Buffer instead of `upload_stream()` in Cloudinary
 - ❌ `gemini-pro` model name (legacy 1.0 — use `gemini-2.5-flash`)

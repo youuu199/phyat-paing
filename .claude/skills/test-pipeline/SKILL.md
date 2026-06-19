@@ -1,39 +1,43 @@
 ---
 name: bill-organizer:test-pipeline
-description: End-to-end test of the upload → Firebase Storage → Vision OCR → Gemini AI → MongoDB save pipeline. Activates when user wants to verify the full pipeline works, debug OCR/AI output, or test with a sample bill image.
+description: End-to-end test of the upload → Cloudinary → Vision OCR → Gemini AI → MongoDB save pipeline. Activates when user wants to verify the full pipeline works, debug OCR/AI output, or test with a sample bill image.
 ---
 
 # Test Pipeline — Bill Organizer
 
-Test the full pipeline end-to-end: upload image → Firebase Storage → Vision OCR → Gemini classification → MongoDB save.
+Test the full pipeline end-to-end: upload image → Cloudinary → Vision OCR → Gemini classification → MongoDB save.
 
 ## Prerequisites
 - All environment variables set (use `/setup-env` first if needed)
-- All services configured (Firebase, Vision, Gemini, MongoDB)
+- All services configured (Cloudinary, Vision, Gemini, MongoDB)
 - Backend running or testable via direct module imports
 
 ## Step-by-Step Test
 
-### Step 1: Test Firebase Storage Upload (isolated)
+### Step 1: Test Cloudinary Upload (isolated)
 
 ```javascript
 // server/src/test-pipeline.js (partial)
 import 'dotenv/config';
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getStorage, getDownloadURL } from 'firebase-admin/storage';
+import { v2 as cloudinary } from 'cloudinary';
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-const app = initializeApp({
-  credential: cert(serviceAccount),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
-const bucket = getStorage().bucket();
-const file = bucket.file(`test/${Date.now()}.txt`);
-await file.save('Hello from test pipeline!', { contentType: 'text/plain' });
-await file.makePublic();
-const url = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-console.log('✓ Firebase upload OK:', url);
+const result = await new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    { folder: 'test', public_id: `pipeline-test-${Date.now()}`, resource_type: 'image' },
+    (err, res) => err ? reject(err) : resolve(res)
+  );
+  stream.end(Buffer.from('test'));
+});
+
+console.log('✓ Cloudinary upload OK:', result.secure_url);
+console.log('  Public ID:', result.public_id);
 ```
 
 ### Step 2: Test Vision OCR (isolated)
@@ -121,8 +125,8 @@ Call the combined endpoint (if running) or import all modules and chain them:
 ```javascript
 // Full pipeline test
 async function testFullPipeline(imagePath) {
-  // 1. Upload to Firebase → get URL
-  const imageUrl = await uploadToFirebase(fs.readFileSync(imagePath), 'test-bill.jpg');
+  // 1. Upload to Cloudinary → get URL
+  const { url, publicId } = await uploadToCloudinary(fs.readFileSync(imagePath), 'test-bill.jpg', 'image/jpeg');
 
   // 2. OCR via Vision
   const rawText = await extractTextFromImage(fs.readFileSync(imagePath));
@@ -133,7 +137,8 @@ async function testFullPipeline(imagePath) {
   // 4. Save to MongoDB
   const bill = await Bill.create({
     ...billData,
-    imageUrl,
+    imageUrl: url,
+    cloudinaryPublicId: publicId,
     rawText,
   });
 
@@ -143,10 +148,10 @@ async function testFullPipeline(imagePath) {
 ```
 
 ## Verification Checklist
-- [ ] Firebase: image uploaded, public URL accessible in browser
+- [ ] Cloudinary: image uploaded, secure URL accessible in browser
 - [ ] Vision: raw text extracted (contains recognizable text from the image)
 - [ ] Gemini: JSON returned with valid `title`, `amount` (number), `category` (valid enum)
-- [ ] MongoDB: document saved with all fields, `_id` assigned, `createdAt` auto-set
+- [ ] MongoDB: document saved with all fields, `_id` assigned, `cloudinaryPublicId` stored, `createdAt` auto-set
 - [ ] Category is one of: Electricity, Water, Internet, Phone, Shopping, Other
 
 ## Common Failures & Fixes
@@ -154,9 +159,9 @@ async function testFullPipeline(imagePath) {
 | Symptom | Likely Cause |
 |---------|-------------|
 | `MongooseServerSelectionError` | MongoDB not running, or `localhost` instead of `127.0.0.1` |
-| `ENOENT` on firebase-admin | `npm install firebase-admin` not run |
+| `Cloud config is not specified` | `CLOUDINARY_CLOUD_NAME` / API_KEY / API_SECRET not set in .env |
+| `upload_stream is not a function` | Using `upload()` with a Buffer — use `upload_stream()` |
 | `401 Unauthorized` (Vision) | Using API key instead of service account credentials |
 | Gemini `404 model not found` | Wrong model string — use `gemini-2.5-flash` not `gemini-pro` |
-| `downloadTokens missing` | File not public — call `file.makePublic()` or use `getDownloadURL()` |
 | `E11000 duplicate key` | Not a real error in test — just delete the duplicate and retry |
 | Vision returns empty text | Image has no text, or wrong language hints — try adding `['my', 'en']` |

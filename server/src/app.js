@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import uploadRoutes from './routes/upload.js';
+import billRoutes from './routes/billRoutes.js';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/upload', uploadRoutes);
+app.use('/api/bills', billRoutes);
 
 // --------------- Error handler ---------------
 app.use((err, req, res, next) => {

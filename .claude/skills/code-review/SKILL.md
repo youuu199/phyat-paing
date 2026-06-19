@@ -1,6 +1,6 @@
 ---
 name: bill-organizer:code-review
-description: Reviews current changes for anti-patterns specific to this project's MERN + Firebase + Vision + Gemini stack. Activates on /code-review or when user asks to review recent code, check for bugs, or audit against Phase 0 allowed APIs.
+description: Reviews current changes for anti-patterns specific to this project's MERN + Cloudinary + Vision + Gemini stack. Activates on /code-review or when user asks to review recent code, check for bugs, or audit against Phase 0 allowed APIs.
 ---
 
 # Code Review — Bill Organizer Stack
@@ -21,17 +21,17 @@ grep -rn "localhost:27017" server/src/
 ```
 Node.js may resolve `localhost` to IPv6 `::1` while MongoDB listens on IPv4. Should be `127.0.0.1`.
 
-### Firebase — old namespace import
+### Cloudinary — `upload()` with Buffer
 ```bash
-grep -rn "admin.storage()" server/src/
+grep -rn "cloudinary\.uploader\.upload\s*(" server/src/
 ```
-Must use `getStorage()` from `firebase-admin/storage`, not `admin.storage()`.
+Must use `upload_stream()` wrapped in Promise for Buffer uploads. `upload()` expects file path string or URL, not a Buffer.
 
-### Firebase — gs:// URI in bucket()
+### Cloudinary — missing `v2` import
 ```bash
-grep -rn "gs://" server/src/
+grep -rn "from 'cloudinary'" server/src/
 ```
-`bucket()` takes just the name (e.g., `my-project.appspot.com`), NOT a `gs://` URI.
+Must be `import { v2 as cloudinary } from 'cloudinary'`. A bare `import cloudinary from 'cloudinary'` won't have `upload_stream()`.
 
 ### Google Cloud Vision — API key
 ```bash

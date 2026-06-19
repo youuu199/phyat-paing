@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "MongoDB": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server",
+        "--connectionString",
+        "mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority"
+      ]
+    },
+    "@21st-dev/magic": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@21st-dev/magic@latest",
+        "API_KEY=\"<your-api-key>\""
+      ]
+    }
+  }
+}
