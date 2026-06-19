@@ -29,5 +29,5 @@ vision-key.json
 vision-key.Identifier
 *-key.json
 
-# MCP config (contains API keys)
-.mcp.json
+# MCP config — secrets are in .env, not here
+# .mcp.json is committed (safe — uses ${ENV_VAR} references)
