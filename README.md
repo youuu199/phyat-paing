@@ -9,10 +9,6 @@ A MERN web app that lets you upload images of utility bills and receipts — it 
 
 ## 📸 Screenshots
 
-### Dashboard
-![Dashboard](docs/images/dashboard.png)
-The main dashboard shows all your uploaded bills in a responsive card grid. Each card displays the bill's **title**, **amount**, **category** (color-coded: Electricity, Water, Internet, Phone, Shopping, Other), and a **thumbnail** of the original image. Filter bills by tapping a category tab at the top or by selecting a month/year from the left sidebar. Click the trash icon on any card to delete it (removes from both MongoDB and Cloudinary).
-
 ### Register
 ![Register](docs/images/register.png)
 New users create an account here by providing a username, email, and password. On submit, the backend hashes the password with bcryptjs and stores the user in MongoDB. Already have an account? Click the "Sign in" link at the bottom to switch to the login page.
@@ -20,6 +16,10 @@ New users create an account here by providing a username, email, and password. O
 ### Login
 ![Auth](docs/images/auth.png)
 Returning users sign in with their email and password. The backend verifies credentials and returns a JWT token, which the frontend stores and attaches to all subsequent API requests via the `Authorization: Bearer <token>` header. All bills are automatically scoped to the authenticated user.
+
+### Dashboard
+![Dashboard](docs/images/dashboard.png)
+The main dashboard shows all your uploaded bills in a responsive card grid. Each card displays the bill's **title**, **amount**, **category** (color-coded: Electricity, Water, Internet, Phone, Shopping, Other), and a **thumbnail** of the original image. Filter bills by tapping a category tab at the top or by selecting a month/year from the left sidebar. Click the trash icon on any card to delete it (removes from both MongoDB and Cloudinary).
 
 ## How It Works
 
