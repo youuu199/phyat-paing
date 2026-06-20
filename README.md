@@ -7,6 +7,13 @@ A MERN web app that lets you upload images of utility bills and receipts — it 
 - **Frontend:** https://phyat-paing.vercel.app/
 - **Backend API:** https://bill-organizer-api.onrender.com/
 
+## 📸 Screenshots
+
+| Dashboard | Register | Auth |
+|:---------:|:------:|:----:|
+| ![Dashboard](docs/images/dashboard.png) | ![Register](docs/images/register.png) | ![Auth](docs/images/auth.png) |
+| *Filterable bill dashboard with category tabs & sidebar* | *Register new account with JWT auth* | *Login with JWT auth* |
+
 ## How It Works
 
 ```
