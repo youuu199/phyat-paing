@@ -2,6 +2,7 @@ services:
   - type: web
     name: bill-organizer-api
     runtime: node
+    plan: free
     buildCommand: npm install
     startCommand: node src/server.js
     envVars:
