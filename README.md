@@ -2,6 +2,11 @@
 
 A MERN web app that lets you upload images of utility bills and receipts — it extracts the data automatically using OCR and AI, then displays everything on a filterable dashboard.
 
+## 🚀 Live Demo
+
+- **Frontend:** https://phyat-paing.vercel.app/
+- **Backend API:** https://bill-organizer-api.onrender.com/
+
 ## How It Works
 
 ```
@@ -172,6 +177,36 @@ phyat-paing/
 
 ## Deployment
 
+### Live Environment
+
+| Service | URL | Status |
+|---------|-----|--------|
+| **Frontend** | https://phyat-paing.vercel.app/ | ✅ Live |
+| **Backend** | https://bill-organizer-api.onrender.com/ | ✅ Live |
+| **Database** | MongoDB Atlas | ✅ Connected |
+
+### Health Check
+
+```bash
+curl https://bill-organizer-api.onrender.com/api/health
+```
+
+Expected response:
+```json
+{"status":"healthy","timestamp":"...","uptime":...,"environment":"production"}
+```
+
+### Architecture
+
+```
+Frontend (Vercel) → Backend (Render) → MongoDB Atlas
+     ↓                    ↓
+  Static site        Express API
+  /api/* proxy       Tesseract OCR
+                     Cohere AI
+                     Cloudinary
+```
+
 ### Prerequisites
 
 - GitHub account
@@ -186,30 +221,46 @@ phyat-paing/
 2. **Set up MongoDB Atlas:**
    - Create a free cluster at [MongoDB Atlas](https://cloud.mongodb.com)
    - Get your connection string
-   - Add your IP to the whitelist (or use 0.0.0.0/0 for all IPs)
+   - Add Render IPs to the whitelist:
+     - `0.0.0.0/0` (allows all IPs)
+     - Or specific Render IPs: `34.64.0.0/10`, `35.192.0.0/12`, `34.66.0.0/16`
 
 3. **Set up Vercel:**
    - Connect your GitHub repo to [Vercel](https://vercel.com)
    - Set root directory to `client/`
-   - Add environment variable: `VITE_API_URL=https://your-backend.onrender.com/api`
+   - The `vercel.json` will auto-configure `/api/*` rewrites to the backend
 
 4. **Set up Render:**
    - Create a new Web Service at [Render](https://render.com)
    - Connect your GitHub repo
    - Set root directory to `server/`
-   - Add all environment variables from `server/.env.example`
+   - Add environment variables:
+     ```
+     NODE_ENV=production
+     MONGODB_URI=mongodb+srv://...
+     CLOUDINARY_CLOUD_NAME=...
+     CLOUDINARY_API_KEY=...
+     CLOUDINARY_API_SECRET=...
+     COHERE_API_KEY=...
+     JWT_SECRET=(auto-generate)
+     FRONTEND_URL=https://phyat-paing.vercel.app
+     ```
 
-5. **Configure GitHub Secrets:**
-   - Go to your repo → Settings → Secrets and variables → Actions
-   - Add: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `RENDER_API_KEY`, `RENDER_SERVICE_ID`
-
-6. **Push to main:**
-   - GitHub Actions will automatically deploy to both platforms
-   - Check the Actions tab for deployment status
+5. **Push to main:**
+   - Render auto-deploys on push
+   - Vercel auto-deploys on push
 
 ### Environment Variables
 
-See `server/.env.example` for all required environment variables.
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MONGODB_URI` | MongoDB Atlas connection string | `mongodb+srv://user:pass@cluster.mongodb.net/bill-organizer` |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `your-cloud-name` |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789` |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | `your-secret` |
+| `COHERE_API_KEY` | Cohere API key | `your-cohere-key` |
+| `JWT_SECRET` | JWT secret for auth | `random-256-bit-secret` |
+| `FRONTEND_URL` | Vercel frontend URL (for CORS) | `https://phyat-paing.vercel.app` |
 
 ### Manual Deployment
 
@@ -224,9 +275,8 @@ vercel --prod
 - Push to main branch
 - Render auto-deploys on push
 
-### Monitoring
+### Dashboards
 
-- **Health Check:** `GET https://your-backend.onrender.com/api/health`
-- **Vercel Dashboard:** https://vercel.com/dashboard
-- **Render Dashboard:** https://dashboard.render.com
+- **Vercel:** https://vercel.com/dashboard
+- **Render:** https://dashboard.render.com
 - **MongoDB Atlas:** https://cloud.mongodb.com
