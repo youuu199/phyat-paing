@@ -169,3 +169,64 @@ phyat-paing/
 | 📱 Phone | Telenor, Ooredoo, MPT top-up |
 | 🛒 Shopping | CityMart, Junction, Myanmar Plaza |
 | 📌 Other | Medical, transport, etc. |
+
+## Deployment
+
+### Prerequisites
+
+- GitHub account
+- Vercel account (free tier)
+- Render account (free tier)
+- MongoDB Atlas account (free tier)
+
+### Quick Deploy
+
+1. **Fork/clone this repository**
+
+2. **Set up MongoDB Atlas:**
+   - Create a free cluster at [MongoDB Atlas](https://cloud.mongodb.com)
+   - Get your connection string
+   - Add your IP to the whitelist (or use 0.0.0.0/0 for all IPs)
+
+3. **Set up Vercel:**
+   - Connect your GitHub repo to [Vercel](https://vercel.com)
+   - Set root directory to `client/`
+   - Add environment variable: `VITE_API_URL=https://your-backend.onrender.com/api`
+
+4. **Set up Render:**
+   - Create a new Web Service at [Render](https://render.com)
+   - Connect your GitHub repo
+   - Set root directory to `server/`
+   - Add all environment variables from `server/.env.example`
+
+5. **Configure GitHub Secrets:**
+   - Go to your repo → Settings → Secrets and variables → Actions
+   - Add: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `RENDER_API_KEY`, `RENDER_SERVICE_ID`
+
+6. **Push to main:**
+   - GitHub Actions will automatically deploy to both platforms
+   - Check the Actions tab for deployment status
+
+### Environment Variables
+
+See `server/.env.example` for all required environment variables.
+
+### Manual Deployment
+
+#### Frontend (Vercel)
+```bash
+cd client
+npm run build
+vercel --prod
+```
+
+#### Backend (Render)
+- Push to main branch
+- Render auto-deploys on push
+
+### Monitoring
+
+- **Health Check:** `GET https://your-backend.onrender.com/api/health`
+- **Vercel Dashboard:** https://vercel.com/dashboard
+- **Render Dashboard:** https://dashboard.render.com
+- **MongoDB Atlas:** https://cloud.mongodb.com

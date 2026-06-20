@@ -1,10 +1,5 @@
 import mongoose from 'mongoose';
 
-/**
- * Connect to MongoDB using Mongoose.
- * Uses MONGODB_URI from environment variables.
- * Falls back to mongodb-memory-server if Atlas is unreachable.
- */
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
@@ -15,6 +10,21 @@ const connectDB = async () => {
         serverSelectionTimeoutMS: 5000,
       });
       console.log(`MongoDB connected: ${conn.connection.host}`);
+
+      mongoose.connection.on('error', (err) => {
+        console.error('MongoDB connection error:', err);
+      });
+
+      mongoose.connection.on('disconnected', () => {
+        console.log('MongoDB disconnected');
+      });
+
+      process.on('SIGINT', async () => {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed through app termination');
+        process.exit(0);
+      });
+
       return;
     } catch (err) {
       console.warn(`Atlas unreachable (${err.message}), falling back to local in-memory MongoDB...`);

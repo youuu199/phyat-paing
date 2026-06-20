@@ -21,7 +21,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // --------------- Routes ---------------
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Bill Organizer API is running' });
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 app.use('/api/auth', authRoutes);
