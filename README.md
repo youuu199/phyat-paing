@@ -9,10 +9,14 @@ A MERN web app that lets you upload images of utility bills and receipts — it 
 
 ## 📸 Screenshots
 
-| Dashboard | Register | Auth |
-|:---------:|:------:|:----:|
-| ![Dashboard](docs/images/dashboard.png) | ![Register](docs/images/register.png) | ![Auth](docs/images/auth.png) |
-| *Filterable bill dashboard with category tabs & sidebar* | *Register new account with JWT auth* | *Login with JWT auth* |
+![Dashboard](docs/images/dashboard.png)
+*Filterable bill dashboard with category tabs & sidebar*
+
+![Register](docs/images/register.png)
+*Register new account with JWT auth*
+
+![Auth](docs/images/auth.png)
+*Login with JWT auth*
 
 ## How It Works
 
