@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://phyat-paing.onrender.com/api/$1"
+      "destination": "https://bill-organizer-api.onrender.com/api/$1"
     }
   ]
 }
