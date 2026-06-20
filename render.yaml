@@ -4,13 +4,11 @@ services:
     runtime: node
     plan: free
     rootDir: server
-    buildCommand: npm install
+    buildCommand: npm install && node --input-type=module -e "import('tesseract.js').then(m => m.createWorker('eng+mya'))"
     startCommand: node src/server.js
     envVars:
       - key: NODE_ENV
         value: production
-      - key: FRONTEND_URL
-        sync: false
       - key: MONGODB_URI
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
@@ -22,4 +20,6 @@ services:
       - key: COHERE_API_KEY
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://phyat-paing-gktvzhj8d-vimmms-projects.vercel.app
