@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Bill, Category } from '../types';
+import type { Bill } from '../types';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
 import BillEditModal from './BillEditModal';
 
 interface BillCardProps {
   bill: Bill;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, updates: { title?: string; amount?: number; category?: string }) => Promise<void>;
 }
 
@@ -54,8 +54,8 @@ export default function BillCard({ bill, onDelete, onUpdate }: BillCardProps) {
     }
   };
 
-  const categoryColor = CATEGORY_COLORS[bill.category] || CATEGORY_COLORS.Other;
-  const categoryIcon = CATEGORY_ICONS[bill.category] || CATEGORY_ICONS.Other;
+  const categoryColor = CATEGORY_COLORS[bill.category as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.Other;
+  const categoryIcon = CATEGORY_ICONS[bill.category as keyof typeof CATEGORY_ICONS] || CATEGORY_ICONS.Other;
 
   return (
     <>

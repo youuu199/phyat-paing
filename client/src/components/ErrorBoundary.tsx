@@ -55,7 +55,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <p className="error-boundary__message">
               An unexpected error occurred. Please try refreshing the page.
             </p>
-            {process.env.NODE_ENV !== 'production' && this.state.error && (
+            {import.meta.env.MODE !== 'production' && this.state.error && (
               <details className="error-boundary__details">
                 <summary>Error details (development only)</summary>
                 <pre className="error-boundary__stack">
