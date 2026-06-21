@@ -7,7 +7,7 @@ import { classifyBillData } from '../utils/cohereService.js';
 /**
  * POST /api/bills
  *
- * Full pipeline: upload image → Cloudinary → Vision OCR → Cohere AI → MongoDB.
+ * Full pipeline: upload image → Cloudinary → Tesseract OCR → Cohere AI → MongoDB.
  * Scoped to the authenticated user (req.userId set by auth middleware).
  *
  * Expects: multipart/form-data with field name "image"
@@ -31,10 +31,10 @@ export const createBill = async (req, res, next) => {
     );
     console.log(`[pipeline] ✓ Cloudinary OK — ${uploadResult.url}`);
 
-    // --- Stage 3: OCR via Google Cloud Vision ---
-    console.log('[pipeline] Extracting text with Vision OCR...');
+    // --- Stage 3: OCR via Tesseract.js ---
+    console.log('[pipeline] Extracting text with Tesseract OCR...');
     const rawText = await extractTextFromImage(req.file.buffer);
-    console.log(`[pipeline] ✓ Vision OK — ${rawText.length} chars extracted`);
+    console.log(`[pipeline] ✓ Tesseract OK — ${rawText.length} chars extracted`);
 
     // --- Stage 4: AI classification via Cohere ---
     console.log('[pipeline] Classifying with Cohere...');
@@ -82,9 +82,10 @@ export const createBill = async (req, res, next) => {
 };
 
 /**
- * GET /api/bills?category=Electricity&year=2025&month=3
+ * GET /api/bills?category=Electricity&year=2025&month=3&limit=20&skip=0
  *
  * Returns the authenticated user's bills, optionally filtered by category and/or date.
+ * Supports pagination via limit and skip query parameters.
  * Sorted by newest first.
  */
 export const getBills = async (req, res, next) => {
@@ -109,8 +110,22 @@ export const getBills = async (req, res, next) => {
       }
     }
 
-    const bills = await Bill.find(filter).sort({ createdAt: -1 });
-    res.json(bills);
+    // Pagination
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100); // Default 50, max 100
+    const skip = parseInt(req.query.skip, 10) || 0;
+
+    const [bills, total] = await Promise.all([
+      Bill.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Bill.countDocuments(filter),
+    ]);
+
+    res.json({
+      bills,
+      total,
+      limit,
+      skip,
+      hasMore: skip + limit < total,
+    });
   } catch (err) {
     next(err);
   }
@@ -174,6 +189,54 @@ export const getBillStats = async (req, res, next) => {
       { $sort: { total: -1 } },
     ]);
     res.json(stats);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/bills/:id
+ *
+ * Updates a bill's title, amount, and/or category — ONLY if it belongs to the authenticated user.
+ * Does NOT allow changing the image (that requires re-upload).
+ */
+export const updateBill = async (req, res, next) => {
+  try {
+    const { title, amount, category } = req.body;
+
+    // Validate category if provided
+    const validCategories = ['Electricity', 'Water', 'Internet', 'Phone', 'Shopping', 'Other'];
+    if (category && !validCategories.includes(category)) {
+      return res.status(400).json({
+        error: `Invalid category. Must be one of: ${validCategories.join(', ')}`,
+      });
+    }
+
+    // Validate amount if provided
+    if (amount !== undefined && (typeof amount !== 'number' || amount < 0)) {
+      return res.status(400).json({ error: 'Amount must be a non-negative number' });
+    }
+
+    const updates = {};
+    if (title !== undefined) updates.title = title;
+    if (amount !== undefined) updates.amount = amount;
+    if (category !== undefined) updates.category = category;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const bill = await Bill.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    if (!bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    res.json(bill);
   } catch (err) {
     next(err);
   }

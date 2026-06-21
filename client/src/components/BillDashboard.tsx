@@ -5,22 +5,7 @@ import BillUploader from './BillUploader';
 import Sidebar from './Sidebar';
 import { useToast } from './Toast';
 import { useAuth } from './AuthContext';
-
-interface Bill {
-  _id: string;
-  title: string;
-  amount: number;
-  category: string;
-  imageUrl: string;
-  createdAt: string;
-}
-
-interface MonthEntry {
-  year: number;
-  month: number;
-  label: string;
-  count: number;
-}
+import type { Bill, MonthEntry } from '../types';
 
 const SKELETON_COUNT = 6;
 
@@ -49,6 +34,7 @@ export default function BillDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { toast } = useToast();
   const { apiFetch } = useAuth();
@@ -76,7 +62,7 @@ export default function BillDashboard() {
       }
 
       const data = await res.json();
-      setBills(data);
+      setBills(data.bills || data); // Handle both paginated and legacy response
       initialLoadDone.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load bills');
@@ -130,12 +116,36 @@ export default function BillDashboard() {
     toast('Bill processed and saved!', 'success');
   };
 
+  const handleUpdate = async (id: string, updates: { title?: string; amount?: number; category?: string }) => {
+    try {
+      const res = await apiFetch(`/api/bills/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      fetchBills();
+      toast('Bill updated successfully', 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update bill';
+      toast(msg, 'error');
+      throw err;
+    }
+  };
+
   const handleRetry = () => {
     setError(null);
     fetchBills();
   };
 
-  const totalSpent = bills.reduce((sum, b) => sum + b.amount, 0);
+  // Client-side search filtering
+  const filteredBills = searchQuery.trim()
+    ? bills.filter((bill) =>
+        bill.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : bills;
+
+  const totalSpent = filteredBills.reduce((sum, b) => sum + b.amount, 0);
 
   const categoryLabel =
     selectedYear !== null
@@ -188,6 +198,28 @@ export default function BillDashboard() {
           onSelect={(c) => setCategory(c)}
         />
 
+        {/* Search bar */}
+        <div className="dashboard__search">
+          <span className="dashboard__search-icon" aria-hidden="true">🔍</span>
+          <input
+            className="dashboard__search-input"
+            type="text"
+            placeholder="Search bills by title..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search bills"
+          />
+          {searchQuery && (
+            <button
+              className="dashboard__search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
         {/* Error state */}
         {error && (
           <div className="dashboard__error" role="alert">
@@ -209,24 +241,26 @@ export default function BillDashboard() {
         )}
 
         {/* Empty state */}
-        {!loading && !error && bills.length === 0 && (
+        {!loading && !error && filteredBills.length === 0 && (
           <div className="dashboard__empty">
             <span className="dashboard__empty-icon" aria-hidden="true">
               📭
             </span>
             <p className="dashboard__empty-text">
-              No bills found{category !== 'All' ? ` in "${category}"` : ''}
-              {categoryLabel ? ` for ${categoryLabel}` : ''}.
-              Upload your first bill above!
+              {searchQuery
+                ? `No bills matching "${searchQuery}"`
+                : `No bills found${category !== 'All' ? ` in "${category}"` : ''}${categoryLabel ? ` for ${categoryLabel}` : ''}.`
+              }
+              {!searchQuery && ' Upload your first bill above!'}
             </p>
           </div>
         )}
 
         {/* Bill grid */}
-        {!loading && !error && bills.length > 0 && (
+        {!loading && !error && filteredBills.length > 0 && (
           <div className="dashboard__grid">
-            {bills.map((bill) => (
-              <BillCard key={bill._id} bill={bill} onDelete={handleDelete} />
+            {filteredBills.map((bill) => (
+              <BillCard key={bill._id} bill={bill} onDelete={handleDelete} onUpdate={handleUpdate} />
             ))}
           </div>
         )}

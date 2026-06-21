@@ -1,41 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-
-interface Bill {
-  _id: string;
-  title: string;
-  amount: number;
-  category: string;
-  imageUrl: string;
-  createdAt: string;
-}
+import type { Bill, Category } from '../types';
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
+import BillEditModal from './BillEditModal';
 
 interface BillCardProps {
   bill: Bill;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: { title?: string; amount?: number; category?: string }) => Promise<void>;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Electricity: '#eab308',
-  Water: '#0ea5e9',
-  Internet: '#8b5cf6',
-  Phone: '#10b981',
-  Shopping: '#ec4899',
-  Other: '#6b7280',
-};
-
-const CATEGORY_ICONS: Record<string, string> = {
-  Electricity: '⚡',
-  Water: '💧',
-  Internet: '🌐',
-  Phone: '📱',
-  Shopping: '🛒',
-  Other: '📌',
-};
-
-export default function BillCard({ bill, onDelete }: BillCardProps) {
+export default function BillCard({ bill, onDelete, onUpdate }: BillCardProps) {
   const [imgError, setImgError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [viewing, setViewing] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Close viewer on Escape key
   const handleKeyDown = useCallback(
@@ -62,12 +41,16 @@ export default function BillCard({ bill, onDelete }: BillCardProps) {
     day: 'numeric',
   });
 
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await onDelete(bill._id);
-    } catch {
-      setDeleting(false);
+  const handleDeleteClick = () => {
+    if (confirmDelete) {
+      // Second click — actually delete
+      setDeleting(true);
+      onDelete(bill._id).catch(() => setDeleting(false));
+    } else {
+      // First click — show confirmation
+      setConfirmDelete(true);
+      // Auto-cancel after 3 seconds
+      setTimeout(() => setConfirmDelete(false), 3000);
     }
   };
 
@@ -125,12 +108,19 @@ export default function BillCard({ bill, onDelete }: BillCardProps) {
 
         <div className="bill-card__actions">
           <button
-            className="bill-card__delete"
-            onClick={handleDelete}
-            disabled={deleting}
-            aria-label={`Delete bill: ${bill.title}`}
+            className="bill-card__edit"
+            onClick={() => setEditing(true)}
+            aria-label={`Edit bill: ${bill.title}`}
           >
-            {deleting ? '⏳ Deleting...' : '🗑 Delete'}
+            ✏️ Edit
+          </button>
+          <button
+            className={`bill-card__delete${confirmDelete ? ' bill-card__delete--confirm' : ''}`}
+            onClick={handleDeleteClick}
+            disabled={deleting}
+            aria-label={confirmDelete ? `Confirm delete: ${bill.title}` : `Delete bill: ${bill.title}`}
+          >
+            {deleting ? '⏳ Deleting...' : confirmDelete ? '⚠️ Click again to confirm' : '🗑 Delete'}
           </button>
         </div>
       </div>
@@ -161,6 +151,15 @@ export default function BillCard({ bill, onDelete }: BillCardProps) {
           />
           <p className="image-viewer__caption">{bill.title}</p>
         </div>
+      )}
+
+      {/* Edit modal */}
+      {editing && (
+        <BillEditModal
+          bill={bill}
+          onSave={onUpdate}
+          onClose={() => setEditing(false)}
+        />
       )}
     </>
   );

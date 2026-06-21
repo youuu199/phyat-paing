@@ -2,6 +2,7 @@ import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import AuthPage from './components/AuthPage';
 import BillDashboard from './components/BillDashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 function AppContent() {
@@ -48,7 +49,9 @@ function AppContent() {
       </header>
 
       <main id="main-content" tabIndex={-1}>
-        <BillDashboard />
+        <ErrorBoundary>
+          <BillDashboard />
+        </ErrorBoundary>
       </main>
     </>
   );

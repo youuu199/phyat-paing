@@ -1,8 +1,22 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import upload from '../middleware/upload.js';
+import auth from '../middleware/auth.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryStorage.js';
 
 const router = Router();
+
+// All upload routes require authentication
+router.use(auth);
+
+// Rate limiter for upload endpoints — prevents storage abuse
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 uploads per minute per IP
+  message: { error: 'Too many uploads, please wait before trying again' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * POST /api/upload
@@ -14,7 +28,7 @@ const router = Router();
  * This only handles the image upload step in isolation.
  * The full pipeline (OCR + AI + MongoDB) is at POST /api/bills.
  */
-router.post('/', upload.single('image'), async (req, res, next) => {
+router.post('/', uploadLimiter, upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({

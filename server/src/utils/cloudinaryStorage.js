@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import pRetry from 'p-retry';
 
 /**
  * Cloudinary image storage provider.
@@ -36,7 +37,7 @@ function ensureConfig() {
 }
 
 /**
- * Upload a file buffer to Cloudinary and return the secure URL.
+ * Upload a file buffer to Cloudinary with retry logic.
  *
  * @param {Buffer} buffer       - File buffer from multer (req.file.buffer)
  * @param {string} originalname - Original filename (stored as metadata)
@@ -46,7 +47,7 @@ function ensureConfig() {
 export async function uploadToCloudinary(buffer, originalname, mimetype) {
   ensureConfig();
 
-  return new Promise((resolve, reject) => {
+  const doUpload = () => new Promise((resolve, reject) => {
     const timestamp = Date.now();
     const safeName = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
 
@@ -69,21 +70,25 @@ export async function uploadToCloudinary(buffer, originalname, mimetype) {
 
     stream.end(buffer);
   });
+
+  return pRetry(doUpload, { retries: 2, minTimeout: 1000 });
 }
 
 /**
- * Delete an image from Cloudinary by its public_id.
+ * Delete an image from Cloudinary by its public_id (with retry).
  *
  * @param {string} publicId - The public_id returned from uploadToCloudinary()
  */
 export async function deleteFromCloudinary(publicId) {
   ensureConfig();
 
-  const result = await cloudinary.uploader.destroy(publicId, {
-    resource_type: 'image',
-    invalidate: true,
-  });
+  const doDelete = async () => {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: 'image',
+      invalidate: true,
+    });
+    return result;
+  };
 
-  // result.result is 'ok' on success, 'not found' if already deleted
-  return result;
+  return pRetry(doDelete, { retries: 2, minTimeout: 1000 });
 }

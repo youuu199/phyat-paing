@@ -37,8 +37,13 @@ export default function AuthPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      setError('Password must contain at least one number');
       return;
     }
 
@@ -103,7 +108,7 @@ export default function AuthPage() {
               className="auth-form__input"
               id="auth-password"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters with a number"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}

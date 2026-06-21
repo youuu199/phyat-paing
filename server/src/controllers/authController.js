@@ -1,12 +1,31 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import validator from 'validator';
 import User from '../models/User.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '7d';
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 function makeToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+
+/**
+ * Set httpOnly cookie with JWT token.
+ * More secure than localStorage — JavaScript cannot access httpOnly cookies,
+ * so XSS attacks cannot steal the token.
+ */
+function setTokenCookie(res, token) {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: isProduction, // Only send over HTTPS in production
+    sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin in production
+    maxAge: COOKIE_MAX_AGE,
+    path: '/',
+  });
 }
 
 /**
@@ -17,7 +36,7 @@ function makeToken(userId) {
  *
  * Validation:
  *  - email must be present and look like an email
- *  - password must be at least 6 characters
+ *  - password must be at least 8 characters with at least one number
  *  - email must not already be registered
  */
 export const register = async (req, res, next) => {
@@ -29,12 +48,16 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    if (!email.includes('@') || email.length < 5) {
+    if (!validator.isEmail(email)) {
       return res.status(400).json({ error: 'Please provide a valid email address' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    if (!/\d/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain at least one number' });
     }
 
     // Check for existing user
@@ -49,8 +72,11 @@ export const register = async (req, res, next) => {
 
     const token = makeToken(user._id.toString());
 
+    // Set httpOnly cookie
+    setTokenCookie(res, token);
+
     res.status(201).json({
-      token,
+      token, // Also send in body for backward compatibility
       user: {
         email: user.email,
         createdAt: user.createdAt,
@@ -70,6 +96,7 @@ export const register = async (req, res, next) => {
  * Errors:
  *  - 401 if email not found or password doesn't match (same
  *    message for both to avoid user enumeration)
+ *  - 423 if account is locked due to too many failed attempts
  */
 export const login = async (req, res, next) => {
   try {
@@ -84,15 +111,31 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    // Check if account is locked
+    if (user.isLocked()) {
+      const lockMinutes = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));
+      return res.status(423).json({
+        error: `Account locked due to too many failed attempts. Try again in ${lockMinutes} minutes.`,
+      });
+    }
+
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) {
+      // Increment failed attempts
+      await user.incrementLoginAttempts();
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    // Reset login attempts on successful login
+    await user.resetLoginAttempts();
+
     const token = makeToken(user._id.toString());
 
+    // Set httpOnly cookie
+    setTokenCookie(res, token);
+
     res.json({
-      token,
+      token, // Also send in body for backward compatibility
       user: {
         email: user.email,
         createdAt: user.createdAt,
@@ -120,4 +163,14 @@ export const getMe = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * POST /api/auth/logout
+ *
+ * Clears the httpOnly auth cookie.
+ */
+export const logout = async (req, res) => {
+  res.clearCookie('token', { path: '/' });
+  res.json({ message: 'Logged out successfully' });
 };

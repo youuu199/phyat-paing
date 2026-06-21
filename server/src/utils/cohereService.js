@@ -1,7 +1,21 @@
 import { CohereClientV2 } from 'cohere-ai';
+import pRetry from 'p-retry';
+
+/** Cached Cohere client — created once, reused across requests */
+let co = null;
+
+/** AI model — configurable via COHERE_MODEL env var */
+const COHERE_MODEL = process.env.COHERE_MODEL || 'command-a-plus-05-2026';
+
+function getClient() {
+  if (!co) {
+    co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
+  }
+  return co;
+}
 
 /**
- * Classify raw OCR text into structured bill data using Cohere Command A.
+ * Classify raw OCR text into structured bill data using Cohere Command A (with retry).
  *
  * Extracts title, total amount, and category from OCR output of Myanmar/English
  * utility bills and receipts.
@@ -12,14 +26,15 @@ import { CohereClientV2 } from 'cohere-ai';
  * Categories: Electricity, Water, Internet, Phone, Shopping, Other
  */
 export async function classifyBillData(rawText) {
-  const co = new CohereClientV2({ token: process.env.COHERE_API_KEY });
+  const client = getClient();
 
-  const response = await co.chat({
-    model: 'command-a-plus-05-2026',
-    messages: [
-      {
-        role: 'user',
-        content: `You are a bill data extraction specialist for Myanmar utility bills and receipts.
+  const doClassify = async () => {
+    const response = await client.chat({
+      model: COHERE_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a bill data extraction specialist for Myanmar utility bills and receipts.
 
 Your task: read OCR text and return structured data.
 
@@ -43,38 +58,41 @@ Now extract from this OCR text:
 ---
 ${rawText}
 ---`,
-      },
-    ],
-    responseFormat: {
-      type: 'json_object',
-      jsonSchema: {
-        type: 'object',
-        properties: {
-          title:    { type: 'string' },
-          amount:   { type: 'number' },
-          category: { type: 'string', enum: ['Electricity', 'Water', 'Internet', 'Phone', 'Shopping', 'Other'] },
         },
-        required: ['title', 'amount', 'category'],
+      ],
+      responseFormat: {
+        type: 'json_object',
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            title:    { type: 'string' },
+            amount:   { type: 'number' },
+            category: { type: 'string', enum: ['Electricity', 'Water', 'Internet', 'Phone', 'Shopping', 'Other'] },
+          },
+          required: ['title', 'amount', 'category'],
+        },
       },
-    },
-  });
+    });
 
-  // Cohere v2 returns content as an array of blocks.
-  // When thinking is enabled, the first block is "thinking" and the actual
-  // response is in a later "text" block — find the text block explicitly.
-  const contents = response.message?.content || [];
-  const textBlock = contents.find((c) => c.type === 'text');
-  let text = textBlock?.text || '{}';
-  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    // Cohere v2 returns content as an array of blocks.
+    // When thinking is enabled, the first block is "thinking" and the actual
+    // response is in a later "text" block — find the text block explicitly.
+    const contents = response.message?.content || [];
+    const textBlock = contents.find((c) => c.type === 'text');
+    let text = textBlock?.text || '{}';
+    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
 
-  console.log('[cohere] Raw text:', text.substring(0, 200));
+    console.log('[cohere] Raw text:', text.substring(0, 200));
 
-  try {
-    const parsed = JSON.parse(text);
-    console.log(`[cohere] Parsed: title="${parsed.title}" amount=${parsed.amount} category="${parsed.category}"`);
-    return parsed;
-  } catch (parseErr) {
-    console.error('[cohere] Unparseable output:', text.substring(0, 300));
-    return { title: 'Unknown Bill', amount: 0, category: 'Other' };
-  }
+    try {
+      const parsed = JSON.parse(text);
+      console.log(`[cohere] Parsed: title="${parsed.title}" amount=${parsed.amount} category="${parsed.category}"`);
+      return parsed;
+    } catch (parseErr) {
+      console.error('[cohere] Unparseable output:', text.substring(0, 300));
+      return { title: 'Unknown Bill', amount: 0, category: 'Other' };
+    }
+  };
+
+  return pRetry(doClassify, { retries: 2, minTimeout: 1000 });
 }

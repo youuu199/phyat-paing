@@ -7,9 +7,18 @@ interface BillUploaderProps {
 
 const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff';
 
+type UploadStage = 'idle' | 'uploading' | 'processing' | 'classifying';
+
+const STAGE_MESSAGES: Record<UploadStage, string> = {
+  idle: 'Upload & Process',
+  uploading: '📤 Uploading image...',
+  processing: '🔍 Extracting text (OCR)...',
+  classifying: '🤖 Classifying with AI...',
+};
+
 export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [stage, setStage] = useState<UploadStage>('idle');
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,17 +36,24 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
       return;
     }
 
-    setUploading(true);
+    setStage('uploading');
     setError(null);
 
     try {
       const formData = new FormData();
       formData.append('image', file);
 
+      // Simulate stage progression (actual stages happen server-side)
+      const stageTimer1 = setTimeout(() => setStage('processing'), 2000);
+      const stageTimer2 = setTimeout(() => setStage('classifying'), 8000);
+
       const res = await apiFetch('/api/bills', {
         method: 'POST',
         body: formData,
       });
+
+      clearTimeout(stageTimer1);
+      clearTimeout(stageTimer2);
 
       if (!res.ok) {
         const text = await res.text();
@@ -63,7 +79,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
-      setUploading(false);
+      setStage('idle');
     }
   };
 
@@ -112,9 +128,11 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
     }
   }, []);
 
+  const isUploading = stage !== 'idle';
+
   return (
     <div
-      className={`bill-uploader${dragOver ? ' bill-uploader--dragover' : ''}${file && !uploading ? ' bill-uploader--has-file' : ''}`}
+      className={`bill-uploader${dragOver ? ' bill-uploader--dragover' : ''}${file && !isUploading ? ' bill-uploader--has-file' : ''}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -123,14 +141,20 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
       aria-label="Bill upload area"
     >
       <span className="bill-uploader__icon" aria-hidden="true">
-        {uploading ? '⏳' : file ? '📄' : '📤'}
+        {isUploading ? '⏳' : file ? '📄' : '📤'}
       </span>
 
-      <h2>{uploading ? 'Processing Bill...' : 'Upload a Bill'}</h2>
+      <h2>{isUploading ? 'Processing Bill...' : 'Upload a Bill'}</h2>
 
-      {!uploading && (
+      {!isUploading && (
         <p className="bill-uploader__hint">
           Drop your utility bill or receipt image here, or click to browse.
+        </p>
+      )}
+
+      {isUploading && (
+        <p className="bill-uploader__stage">
+          {STAGE_MESSAGES[stage]}
         </p>
       )}
 
@@ -142,7 +166,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
           type="file"
           accept={ACCEPTED_TYPES}
           onChange={handleFileChange}
-          disabled={uploading}
+          disabled={isUploading}
         />
         <label
           className="bill-uploader__file-label"
@@ -152,15 +176,15 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
         </label>
 
         <button
-          className={`bill-uploader__button${uploading ? ' bill-uploader__button--uploading' : ''}`}
+          className={`bill-uploader__button${isUploading ? ' bill-uploader__button--uploading' : ''}`}
           onClick={handleUpload}
-          disabled={!file || uploading}
+          disabled={!file || isUploading}
         >
-          {uploading ? '⏳ Processing...' : '🚀 Upload & Process'}
+          {isUploading ? STAGE_MESSAGES[stage] : '🚀 Upload & Process'}
         </button>
       </div>
 
-      {file && !uploading && (
+      {file && !isUploading && (
         <p className="bill-uploader__selected">
           <span className="bill-uploader__selected-pill">
             ✅ {file.name}

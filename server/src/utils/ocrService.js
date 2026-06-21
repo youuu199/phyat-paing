@@ -1,4 +1,6 @@
 import Tesseract from 'tesseract.js';
+import os from 'os';
+import path from 'path';
 
 /** Worker pool size — handles up to this many concurrent OCR jobs */
 const POOL_SIZE = 3;
@@ -26,7 +28,7 @@ async function getScheduler() {
   const workers = await Promise.all(
     Array.from({ length: POOL_SIZE }, () =>
       Tesseract.createWorker('eng+mya', 1, {
-        cachePath: '/home/vim/.tesseract-cache',
+        cachePath: path.join(os.tmpdir(), 'tesseract-cache'),
         logger: (m) => {
           if (m.status === 'error') console.error('[tesseract]', m);
         },

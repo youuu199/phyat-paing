@@ -1,8 +1,33 @@
 import 'dotenv/config';
+import mongoose from 'mongoose';
 import app from './app.js';
 import connectDB from './config/db.js';
+import { shutdownOCR } from './utils/ocrService.js';
 
 const PORT = process.env.PORT || 5000;
+
+// --------------- Graceful shutdown ---------------
+async function gracefulShutdown(signal) {
+  console.log(`\n${signal} received — shutting down gracefully...`);
+
+  try {
+    // Close MongoDB connection
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed');
+
+    // Terminate Tesseract workers
+    await shutdownOCR();
+
+    console.log('Graceful shutdown complete');
+    process.exit(0);
+  } catch (err) {
+    console.error('Error during shutdown:', err.message);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // --------------- Bootstrap ---------------
 const start = async () => {

@@ -57,13 +57,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const apiFetch = useCallback(
-    (path: string, options: RequestInit = {}) => {
+    async (path: string, options: RequestInit = {}) => {
       const headers = {
         ...(options.headers || {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      return fetch(path, { ...options, headers });
+      try {
+        const res = await fetch(path, { ...options, headers });
+
+        // Detect backend-down conditions (Render cold start, server crash)
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          throw new Error(
+            'Server is starting up — Render free tier takes 30-60s to wake up. Please wait and try again.'
+          );
+        }
+
+        return res;
+      } catch (err) {
+        // Network errors (backend completely unreachable)
+        if (err instanceof TypeError && err.message.includes('fetch')) {
+          throw new Error(
+            'Cannot reach the server — it may be starting up (Render free tier takes 30-60s). Please wait and try again.'
+          );
+        }
+        throw err;
+      }
     },
     [token],
   );
