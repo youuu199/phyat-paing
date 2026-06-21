@@ -32,3 +32,5 @@ vision-key.Identifier
 
 # MCP config — secrets are in .env, not here
 # .mcp.json is committed (safe — uses ${ENV_VAR} references)
+.vercel
+.env*
