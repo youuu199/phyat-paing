@@ -10,6 +10,11 @@ export interface Bill {
   imageUrl: string;
   cloudinaryPublicId?: string;
   rawText?: string;
+  dueDate?: string;
+  isRecurring?: boolean;
+  recurringInterval?: 'monthly' | 'quarterly' | 'yearly';
+  isPaid?: boolean;
+  paidAt?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -25,6 +30,22 @@ export interface BillStats {
   _id: string;
   total: number;
   count: number;
+}
+
+export interface TrendEntry {
+  year: number;
+  month: number;
+  total: number;
+  count: number;
+}
+
+export interface BudgetLimits {
+  Electricity?: number;
+  Water?: number;
+  Internet?: number;
+  Phone?: number;
+  Shopping?: number;
+  Other?: number;
 }
 
 export interface PaginatedBills {

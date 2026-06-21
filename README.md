@@ -1,6 +1,6 @@
 # 🧾 Smart Bill Organizer (phyat-paing)
 
-A MERN web app that lets you upload images of utility bills and receipts — it extracts the data automatically using OCR and AI, then displays everything on a filterable dashboard.
+A MERN web app that lets you upload images of utility bills and receipts — it extracts the data automatically using OCR and AI, then displays everything on a filterable dashboard with spending analytics, bill management, and export tools.
 
 ## 🚀 Live Demo
 
@@ -30,6 +30,9 @@ The main dashboard shows all your uploaded bills in a responsive card grid. Each
   → 🤖 Cohere Command A (structured JSON classification)
   → 🗄️ MongoDB (bill storage, Atlas or in-memory fallback)
   → 📊 React Dashboard (filter, search, edit, delete)
+  → 📈 Analytics (spending charts, budget alerts)
+  → ⏰ Bill Management (due dates, recurring, payment tracking)
+  → 📤 Export (CSV, PDF)
 ```
 
 ## Tech Stack
@@ -44,6 +47,9 @@ The main dashboard shows all your uploaded bills in a responsive card grid. Each
 | **AI Classification** | Cohere Command A |
 | **Auth** | JWT (jsonwebtoken + bcryptjs) + httpOnly cookies |
 | **File Upload** | Multer (memory storage) |
+| **Charts** | Recharts (pie + line charts) |
+| **PDF Export** | jsPDF + html2canvas |
+| **Scheduling** | node-cron (recurring bills) |
 | **Logging** | Pino (structured JSON in production) |
 | **Security** | Helmet, express-rate-limit, cookie-parser |
 
@@ -109,19 +115,37 @@ cd client && npm run dev        # http://localhost:5173
 
 ## API Endpoints
 
+### Auth
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/health` | Health check |
 | `POST` | `/api/v1/auth/register` | Register new user |
 | `POST` | `/api/v1/auth/login` | Login, returns JWT token (also sets httpOnly cookie) |
 | `POST` | `/api/v1/auth/logout` | Logout, clears auth cookie |
 | `GET` | `/api/v1/auth/me` | Get current user info |
+| `PATCH` | `/api/v1/auth/change-password` | Change password (auth required) |
+
+### Bills
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | `POST` | `/api/v1/bills` | Upload bill image → full pipeline (Cloudinary → OCR → AI → MongoDB) |
 | `GET` | `/api/v1/bills` | List bills (`?category=`, `?year=`, `?month=`, `?limit=`, `?skip=`) |
 | `GET` | `/api/v1/bills/months` | Available year-month periods with bill counts |
 | `GET` | `/api/v1/bills/stats` | Spending summary grouped by category |
-| `PATCH` | `/api/v1/bills/:id` | Update bill title, amount, and/or category |
+| `GET` | `/api/v1/bills/trends` | Monthly spending totals (`?months=12`) |
+| `GET` | `/api/v1/bills/upcoming` | Bills due in the next 7 days |
+| `GET` | `/api/v1/bills/export` | Export bills as CSV (`?year=`, `?month=`) |
+| `PATCH` | `/api/v1/bills/:id` | Update bill (title, amount, category, dueDate, recurring) |
+| `PATCH` | `/api/v1/bills/:id/payment` | Toggle paid/unpaid status |
+| `POST` | `/api/v1/bills/:id/recurring` | Set recurring schedule (`monthly`, `quarterly`, `yearly`) |
 | `DELETE` | `/api/v1/bills/:id` | Delete a bill (removes from MongoDB and Cloudinary) |
+
+### Other
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Health check |
 | `POST` | `/api/v1/upload` | Upload image to Cloudinary only (auth required) |
 
 > **Note:** Legacy `/api/auth`, `/api/bills`, `/api/upload` routes still work for backward compatibility.
@@ -132,17 +156,26 @@ cd client && npm run dev        # http://localhost:5173
 phyat-paing/
 ├── client/                          # React + TypeScript + Vite
 │   ├── src/
-│   │   ├── App.tsx                  # App shell with ErrorBoundary
+│   │   ├── App.tsx                  # App shell with navigation + theme toggle
 │   │   ├── types.ts                 # Shared TypeScript interfaces
 │   │   ├── components/
 │   │   │   ├── AuthPage.tsx         # Login/register page
 │   │   │   ├── AuthContext.tsx      # JWT token management + apiFetch
 │   │   │   ├── BillUploader.tsx     # File input + upload with progress stages
-│   │   │   ├── BillDashboard.tsx    # Main dashboard with state, search, filters
-│   │   │   ├── BillCard.tsx         # Individual bill card (view, edit, delete)
-│   │   │   ├── BillEditModal.tsx    # Modal for editing bill details
+│   │   │   ├── BillDashboard.tsx    # Main dashboard with analytics + state
+│   │   │   ├── BillCard.tsx         # Bill card (view, edit, delete, payment toggle)
+│   │   │   ├── BillEditModal.tsx    # Modal for editing bill details + recurring
 │   │   │   ├── CategoryTabs.tsx     # 7 category filter tabs
 │   │   │   ├── Sidebar.tsx          # Month/year date filter sidebar
+│   │   │   ├── SpendingOverview.tsx # Donut chart + budget alerts
+│   │   │   ├── MonthlyTrendChart.tsx# Monthly spending line chart
+│   │   │   ├── UpcomingBills.tsx    # Bills due in next 7 days
+│   │   │   ├── PaymentToggle.tsx    # Mark bills paid/unpaid
+│   │   │   ├── RecurringBadge.tsx   # Recurring bill indicator
+│   │   │   ├── ProfilePage.tsx      # User profile + change password
+│   │   │   ├── SettingsPage.tsx     # Currency, budgets, export
+│   │   │   ├── ThemeToggle.tsx      # Dark/light mode toggle
+│   │   │   ├── ExportButtons.tsx    # CSV + PDF export
 │   │   │   ├── Toast.tsx            # Toast notification component
 │   │   │   └── ErrorBoundary.tsx    # React error boundary
 │   │   ├── App.css                  # All component styles
@@ -151,13 +184,13 @@ phyat-paing/
 ├── server/                          # Express + Mongoose + Cloudinary + Tesseract + Cohere
 │   ├── src/
 │   │   ├── app.js                   # Express app with middleware + routes
-│   │   ├── server.js                # Bootstrap: env → MongoDB → Express + graceful shutdown
+│   │   ├── server.js                # Bootstrap: env → MongoDB → Express + shutdown
 │   │   ├── models/
-│   │   │   ├── Bill.js              # Mongoose bill schema
+│   │   │   ├── Bill.js              # Mongoose bill schema (with due dates, recurring, payment)
 │   │   │   └── User.js              # Mongoose user schema (with account lockout)
 │   │   ├── controllers/
-│   │   │   ├── billController.js    # CRUD + full upload pipeline + pagination
-│   │   │   └── authController.js    # Register / login / logout / me
+│   │   │   ├── billController.js    # CRUD + pipeline + trends + export + payment
+│   │   │   └── authController.js    # Register / login / logout / me / change-password
 │   │   ├── routes/
 │   │   │   ├── billRoutes.js        # /api/v1/bills routes (rate limited)
 │   │   │   ├── authRoutes.js        # /api/v1/auth routes (rate limited)
@@ -170,6 +203,7 @@ phyat-paing/
 │   │       ├── cloudinaryStorage.js # upload/delete with retry logic
 │   │       ├── ocrService.js        # Tesseract.js scheduler pool (eng+mya)
 │   │       ├── cohereService.js     # Cohere structured JSON extraction (cached client)
+│   │       ├── recurringService.js  # Daily cron for recurring bill auto-creation
 │   │       └── logger.js            # Pino structured logger
 │   └── .env.example                 # Environment variables template
 ├── docs/
@@ -192,11 +226,31 @@ phyat-paing/
 - 📊 **Dashboard** — Responsive grid of bill cards with thumbnails
 - 🔍 **Search** — Filter bills by title
 - 🔍 **Filtering** — By category (7 tabs) and by month/year (sidebar)
-- ✏️ **Edit bills** — Correct AI-extracted title, amount, and category
+- ✏️ **Edit bills** — Correct AI-extracted title, amount, category, due date, and recurring settings
 - 🗑️ **Delete** — Removes bill from MongoDB and Cloudinary (with confirmation)
 - 📄 **Pagination** — Server-side pagination for large datasets
-- 🌙 **Dark mode** — Auto-detected from system preference
+- 🌙 **Dark mode** — Toggle between light and dark themes (persisted in localStorage)
 - 📱 **Responsive** — Works on desktop and mobile
+
+### Spending Analytics (Phase 1)
+- 📊 **Category pie chart** — Donut chart showing spending breakdown by category (Recharts)
+- 📈 **Monthly trend chart** — Line chart showing spending over the last 12 months
+- 💰 **Budget alerts** — Set per-category spending limits with progress bars (warning at 80%, danger at 100%)
+- 💾 **Budget persistence** — Budget settings saved in localStorage
+
+### Smart Bill Management (Phase 2)
+- 📅 **Due dates** — Set due dates on bills, shown on bill cards
+- ⏰ **Upcoming bills** — Widget showing bills due in the next 7 days with overdue alerts
+- 🔄 **Recurring bills** — Mark bills as monthly/quarterly/yearly; auto-creates new copies via daily cron
+- ✅ **Payment tracking** — Toggle paid/unpaid status with visual indicators
+
+### Product Polish (Phase 3)
+- 👤 **Profile page** — View email, member since date, change password
+- ⚙️ **Settings page** — Currency display, budget limits, export tools
+- 🌙 **Dark mode toggle** — Manual light/dark switch with localStorage persistence
+- 📄 **CSV export** — Download bills as CSV file
+- 📑 **PDF export** — Capture dashboard as PDF (html2canvas + jsPDF)
+- 🧭 **Navigation** — Header nav for Dashboard, Profile, Settings
 
 ### Security
 - 🔒 **httpOnly cookies** — JWT tokens stored in httpOnly cookies (XSS-safe)
@@ -263,6 +317,7 @@ Frontend (Vercel) → Backend (Render) → MongoDB Atlas
   /api/* proxy       Tesseract OCR
                      Cohere AI
                      Cloudinary
+                     node-cron (recurring)
 ```
 
 ### Prerequisites

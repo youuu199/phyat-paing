@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import app from './app.js';
 import connectDB from './config/db.js';
 import { shutdownOCR } from './utils/ocrService.js';
+import { startRecurringService } from './utils/recurringService.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -39,6 +40,9 @@ const start = async () => {
     app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
     });
+
+    // 3. Recurring bill service
+    startRecurringService();
   } catch (err) {
     console.error('Failed to start server:', err.message);
     process.exit(1);

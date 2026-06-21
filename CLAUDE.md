@@ -36,12 +36,21 @@ pyat-paing/
 │   │   └── components/
 │   │       ├── AuthContext.tsx     # JWT auth, apiFetch, backend-down detection
 │   │       ├── AuthPage.tsx       # Login/register form
-│   │       ├── BillDashboard.tsx  # Main dashboard with search, filters
-│   │       ├── BillCard.tsx       # Bill card (view, edit, delete with confirmation)
-│   │       ├── BillEditModal.tsx  # Modal for editing bill details
+│   │       ├── BillDashboard.tsx  # Main dashboard with search, filters, analytics
+│   │       ├── BillCard.tsx       # Bill card (view, edit, delete, payment toggle)
+│   │       ├── BillEditModal.tsx  # Modal for editing bill details + recurring
 │   │       ├── BillUploader.tsx   # Upload with progress stages
 │   │       ├── CategoryTabs.tsx   # Category filter tabs
 │   │       ├── Sidebar.tsx        # Date filter sidebar
+│   │       ├── SpendingOverview.tsx # Donut chart + budget alerts (recharts)
+│   │       ├── MonthlyTrendChart.tsx # Monthly spending line chart (recharts)
+│   │       ├── UpcomingBills.tsx  # Bills due in next 7 days
+│   │       ├── PaymentToggle.tsx  # Mark bills paid/unpaid
+│   │       ├── RecurringBadge.tsx # Recurring bill indicator badge
+│   │       ├── ProfilePage.tsx    # User profile + change password
+│   │       ├── SettingsPage.tsx   # Currency, budgets, export
+│   │       ├── ThemeToggle.tsx    # Dark/light mode toggle
+│   │       ├── ExportButtons.tsx  # CSV + PDF export buttons
 │   │       ├── Toast.tsx          # Toast notifications
 │   │       └── ErrorBoundary.tsx  # React error boundary
 │   ├── package.json
@@ -59,6 +68,7 @@ pyat-paing/
 │   │       ├── ocrService.js      # Tesseract.js scheduler pool
 │   │       ├── cohereService.js   # Cohere structured JSON (cached client, retry)
 │   │       ├── cloudinaryStorage.js # Cloudinary upload/delete (retry)
+│   │       ├── recurringService.js # Daily cron for recurring bill auto-creation
 │   │       └── logger.js          # Pino structured logger
 │   ├── .env.example               # Template — copy to .env
 │   └── package.json               # type: "module" (ESM)
@@ -234,6 +244,11 @@ const billSchema = new Schema({
   imageUrl:            { type: String, required: true },
   cloudinaryPublicId:  { type: String },
   rawText:             { type: String },
+  dueDate:             { type: Date },
+  isRecurring:         { type: Boolean, default: false },
+  recurringInterval:   { type: String, enum: ['monthly','quarterly','yearly'] },
+  isPaid:              { type: Boolean, default: false },
+  paidAt:              { type: Date },
 }, { timestamps: true });
 
 const Bill = model('Bill', billSchema);

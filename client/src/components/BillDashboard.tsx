@@ -3,6 +3,9 @@ import BillCard from './BillCard';
 import CategoryTabs from './CategoryTabs';
 import BillUploader from './BillUploader';
 import Sidebar from './Sidebar';
+import SpendingOverview from './SpendingOverview';
+import MonthlyTrendChart from './MonthlyTrendChart';
+import UpcomingBills from './UpcomingBills';
 import { useToast } from './Toast';
 import { useAuth } from './AuthContext';
 import type { Bill, MonthEntry } from '../types';
@@ -116,7 +119,7 @@ export default function BillDashboard() {
     toast('Bill processed and saved!', 'success');
   };
 
-  const handleUpdate = async (id: string, updates: { title?: string; amount?: number; category?: string }) => {
+  const handleUpdate = async (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => {
     try {
       const res = await apiFetch(`/api/bills/${id}`, {
         method: 'PATCH',
@@ -130,6 +133,18 @@ export default function BillDashboard() {
       const msg = err instanceof Error ? err.message : 'Failed to update bill';
       toast(msg, 'error');
       throw err;
+    }
+  };
+
+  const handlePaymentToggle = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/bills/${id}/payment`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Payment toggle failed');
+      fetchBills();
+      toast('Payment status updated', 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update payment';
+      toast(msg, 'error');
     }
   };
 
@@ -162,6 +177,15 @@ export default function BillDashboard() {
       {/* Main content */}
       <div className="dashboard">
         <BillUploader onUploadSuccess={handleUploadSuccess} />
+
+        {/* Analytics section */}
+        <div className="dashboard__analytics">
+          <SpendingOverview />
+          <div className="dashboard__analytics-side">
+            <MonthlyTrendChart />
+            <UpcomingBills />
+          </div>
+        </div>
 
         {/* Summary row with mobile sidebar toggle */}
         <div className="summary-row">
@@ -260,7 +284,7 @@ export default function BillDashboard() {
         {!loading && !error && filteredBills.length > 0 && (
           <div className="dashboard__grid">
             {filteredBills.map((bill) => (
-              <BillCard key={bill._id} bill={bill} onDelete={handleDelete} onUpdate={handleUpdate} />
+              <BillCard key={bill._id} bill={bill} onDelete={handleDelete} onUpdate={handleUpdate} onPaymentToggle={handlePaymentToggle} />
             ))}
           </div>
         )}

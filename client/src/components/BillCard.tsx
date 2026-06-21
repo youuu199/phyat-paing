@@ -2,14 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Bill } from '../types';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
 import BillEditModal from './BillEditModal';
+import PaymentToggle from './PaymentToggle';
+import RecurringBadge from './RecurringBadge';
 
 interface BillCardProps {
   bill: Bill;
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, updates: { title?: string; amount?: number; category?: string }) => Promise<void>;
+  onUpdate: (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => Promise<void>;
+  onPaymentToggle?: (id: string) => Promise<void>;
 }
 
-export default function BillCard({ bill, onDelete, onUpdate }: BillCardProps) {
+export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: BillCardProps) {
   const [imgError, setImgError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [viewing, setViewing] = useState(false);
@@ -89,12 +92,15 @@ export default function BillCard({ bill, onDelete, onUpdate }: BillCardProps) {
       <div className="bill-card__body">
         <div className="bill-card__header">
           <h3 className="bill-card__title">{bill.title}</h3>
-          <span
-            className="bill-card__category"
-            style={{ backgroundColor: categoryColor }}
-          >
-            {categoryIcon} {bill.category}
-          </span>
+          <div className="bill-card__badges">
+            <span
+              className="bill-card__category"
+              style={{ backgroundColor: categoryColor }}
+            >
+              {categoryIcon} {bill.category}
+            </span>
+            <RecurringBadge bill={bill} />
+          </div>
         </div>
 
         <p className="bill-card__amount">
@@ -104,7 +110,22 @@ export default function BillCard({ bill, onDelete, onUpdate }: BillCardProps) {
 
         <p className="bill-card__date">
           📅 {date}
+          {bill.dueDate && (
+            <span className="bill-card__due-date">
+              {' · Due: '}
+              {new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          )}
         </p>
+
+        {onPaymentToggle && (
+          <div className="bill-card__payment">
+            <PaymentToggle
+              isPaid={bill.isPaid || false}
+              onToggle={() => onPaymentToggle(bill._id)}
+            />
+          </div>
+        )}
 
         <div className="bill-card__actions">
           <button

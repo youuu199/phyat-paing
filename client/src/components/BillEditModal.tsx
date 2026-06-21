@@ -4,7 +4,7 @@ import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
 
 interface BillEditModalProps {
   bill: Bill;
-  onSave: (id: string, updates: { title?: string; amount?: number; category?: string }) => Promise<void>;
+  onSave: (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => Promise<void>;
   onClose: () => void;
 }
 
@@ -12,6 +12,9 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
   const [title, setTitle] = useState(bill.title);
   const [amount, setAmount] = useState(String(bill.amount));
   const [category, setCategory] = useState<Category>(bill.category as Category);
+  const [dueDate, setDueDate] = useState(bill.dueDate ? bill.dueDate.split('T')[0] : '');
+  const [isRecurring, setIsRecurring] = useState(bill.isRecurring || false);
+  const [recurringInterval, setRecurringInterval] = useState<string>(bill.recurringInterval || 'monthly');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +39,9 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
         title: title.trim(),
         amount: parsedAmount,
         category,
+        dueDate: dueDate || undefined,
+        isRecurring,
+        recurringInterval: isRecurring ? recurringInterval : undefined,
       });
       onClose();
     } catch (err) {
@@ -102,6 +108,45 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="modal-form__field">
+            <label className="modal-form__label" htmlFor="edit-due-date">Due Date (optional)</label>
+            <input
+              id="edit-due-date"
+              className="modal-form__input"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              disabled={saving}
+            />
+          </div>
+
+          <div className="modal-form__field">
+            <label className="modal-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                disabled={saving}
+              />
+              🔄 Recurring bill
+            </label>
+            {isRecurring && (
+              <div className="modal-form__recurring-options">
+                {['monthly', 'quarterly', 'yearly'].map((interval) => (
+                  <button
+                    key={interval}
+                    type="button"
+                    className={`modal-form__category-btn${recurringInterval === interval ? ' modal-form__category-btn--active' : ''}`}
+                    onClick={() => setRecurringInterval(interval)}
+                    disabled={saving}
+                  >
+                    {interval === 'monthly' ? '📅 Monthly' : interval === 'quarterly' ? '📆 Quarterly' : '🗓️ Yearly'}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {error && (

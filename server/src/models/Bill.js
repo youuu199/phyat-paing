@@ -47,6 +47,24 @@ const billSchema = new Schema(
       type: String,
       default: '',
     },
+    dueDate: {
+      type: Date,
+    },
+    isRecurring: {
+      type: Boolean,
+      default: false,
+    },
+    recurringInterval: {
+      type: String,
+      enum: ['monthly', 'quarterly', 'yearly'],
+    },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+    paidAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

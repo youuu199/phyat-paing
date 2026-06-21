@@ -174,3 +174,44 @@ export const logout = async (req, res) => {
   res.clearCookie('token', { path: '/' });
   res.json({ message: 'Logged out successfully' });
 };
+
+/**
+ * PATCH /api/auth/change-password
+ *
+ * Body: { currentPassword, newPassword }
+ * Protected — requires valid JWT.
+ */
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    }
+
+    if (!/\d/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one number' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!match) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -6,9 +6,14 @@ import {
   createBill,
   getBills,
   getBillStats,
+  getBillTrends,
   getAvailableMonths,
+  getUpcomingBills,
+  togglePayment,
+  setRecurring,
   updateBill,
   deleteBill,
+  exportBills,
 } from '../controllers/billController.js';
 
 const router = Router();
@@ -29,14 +34,20 @@ const billCreateLimiter = rateLimit({
 // GET    /api/bills           — List user's bills (?category=&year=&month=)
 // GET    /api/bills/months    — Distinct year-month pairs for user
 // GET    /api/bills/stats     — Spending summary for user
+// GET    /api/bills/trends    — Monthly spending totals (?months=12)
 // PATCH  /api/bills/:id       — Update a bill (owned by user)
 // DELETE /api/bills/:id       — Delete a bill (owned by user)
 
-// IMPORTANT: /months and /stats must come BEFORE /:id to avoid route collision
+// IMPORTANT: /months, /stats, /trends, /upcoming, /export must come BEFORE /:id to avoid route collision
 router.post('/', billCreateLimiter, upload.single('image'), createBill);
 router.get('/', getBills);
 router.get('/months', getAvailableMonths);
 router.get('/stats', getBillStats);
+router.get('/trends', getBillTrends);
+router.get('/upcoming', getUpcomingBills);
+router.get('/export', exportBills);
+router.patch('/:id/payment', togglePayment);
+router.post('/:id/recurring', setRecurring);
 router.patch('/:id', updateBill);
 router.delete('/:id', deleteBill);
 

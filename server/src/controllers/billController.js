@@ -195,6 +195,131 @@ export const getBillStats = async (req, res, next) => {
 };
 
 /**
+ * GET /api/bills/trends?months=12
+ *
+ * Returns monthly spending totals for the authenticated user.
+ * Each entry: { year, month, total, count }
+ */
+export const getBillTrends = async (req, res, next) => {
+  try {
+    const months = Math.min(parseInt(req.query.months, 10) || 12, 24);
+    const userId = new mongoose.Types.ObjectId(req.userId);
+
+    // Calculate start date (N months ago from now)
+    const now = new Date();
+    const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months + 1, 1));
+
+    const trends = await Bill.aggregate([
+      { $match: { userId, createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          total: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]);
+
+    const result = trends.map((t) => ({
+      year: t._id.year,
+      month: t._id.month,
+      total: t.total,
+      count: t.count,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/bills/:id/payment
+ *
+ * Toggles paid/unpaid status. Sets paidAt timestamp when marking paid.
+ */
+export const togglePayment = async (req, res, next) => {
+  try {
+    const bill = await Bill.findOne({ _id: req.params.id, userId: req.userId });
+    if (!bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    const newPaidStatus = !bill.isPaid;
+    bill.isPaid = newPaidStatus;
+    bill.paidAt = newPaidStatus ? new Date() : undefined;
+    await bill.save();
+
+    res.json(bill);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/bills/upcoming
+ *
+ * Returns bills due in the next 7 days (unpaid, with a dueDate set).
+ */
+export const getUpcomingBills = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const bills = await Bill.find({
+      userId: req.userId,
+      isPaid: false,
+      dueDate: { $gte: now, $lte: nextWeek },
+    }).sort({ dueDate: 1 });
+
+    res.json(bills);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/bills/:id/recurring
+ *
+ * Sets a bill as recurring with the given interval (monthly/quarterly/yearly).
+ */
+export const setRecurring = async (req, res, next) => {
+  try {
+    const { interval } = req.body;
+    const validIntervals = ['monthly', 'quarterly', 'yearly'];
+
+    if (!interval || !validIntervals.includes(interval)) {
+      return res.status(400).json({
+        error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}`,
+      });
+    }
+
+    const bill = await Bill.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      {
+        $set: {
+          isRecurring: true,
+          recurringInterval: interval,
+        },
+      },
+      { returnDocument: 'after' }
+    );
+
+    if (!bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    res.json(bill);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * PATCH /api/bills/:id
  *
  * Updates a bill's title, amount, and/or category — ONLY if it belongs to the authenticated user.
@@ -202,7 +327,7 @@ export const getBillStats = async (req, res, next) => {
  */
 export const updateBill = async (req, res, next) => {
   try {
-    const { title, amount, category } = req.body;
+    const { title, amount, category, dueDate, isRecurring, recurringInterval } = req.body;
 
     // Validate category if provided
     const validCategories = ['Electricity', 'Water', 'Internet', 'Phone', 'Shopping', 'Other'];
@@ -217,10 +342,21 @@ export const updateBill = async (req, res, next) => {
       return res.status(400).json({ error: 'Amount must be a non-negative number' });
     }
 
+    // Validate recurring interval if provided
+    const validIntervals = ['monthly', 'quarterly', 'yearly'];
+    if (recurringInterval && !validIntervals.includes(recurringInterval)) {
+      return res.status(400).json({
+        error: `Invalid recurring interval. Must be one of: ${validIntervals.join(', ')}`,
+      });
+    }
+
     const updates = {};
     if (title !== undefined) updates.title = title;
     if (amount !== undefined) updates.amount = amount;
     if (category !== undefined) updates.category = category;
+    if (dueDate !== undefined) updates.dueDate = dueDate ? new Date(dueDate) : null;
+    if (isRecurring !== undefined) updates.isRecurring = isRecurring;
+    if (recurringInterval !== undefined) updates.recurringInterval = recurringInterval;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });
@@ -270,6 +406,52 @@ export const deleteBill = async (req, res, next) => {
     }
 
     res.json({ message: 'Bill deleted', id: req.params.id });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/bills/export?format=csv&year=2026&month=6
+ *
+ * Exports bills as CSV for the authenticated user.
+ */
+export const exportBills = async (req, res, next) => {
+  try {
+    const filter = { userId: new mongoose.Types.ObjectId(req.userId) };
+
+    if (req.query.year) {
+      const year = parseInt(req.query.year, 10);
+      if (req.query.month) {
+        const month = parseInt(req.query.month, 10);
+        const start = new Date(Date.UTC(year, month - 1, 1));
+        const end = new Date(Date.UTC(year, month, 1));
+        filter.createdAt = { $gte: start, $lt: end };
+      } else {
+        const start = new Date(Date.UTC(year, 0, 1));
+        const end = new Date(Date.UTC(year + 1, 0, 1));
+        filter.createdAt = { $gte: start, $lt: end };
+      }
+    }
+
+    const bills = await Bill.find(filter).sort({ createdAt: -1 });
+
+    // Build CSV
+    const headers = ['Title', 'Amount (MMK)', 'Category', 'Date', 'Paid', 'Due Date'];
+    const rows = bills.map((b) => [
+      `"${(b.title || '').replace(/"/g, '""')}"`,
+      b.amount,
+      b.category,
+      b.createdAt.toISOString().split('T')[0],
+      b.isPaid ? 'Yes' : 'No',
+      b.dueDate ? b.dueDate.toISOString().split('T')[0] : '',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="bills-export.csv"');
+    res.send(csv);
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { register, login, getMe, logout } from '../controllers/authController.js';
+import { register, login, getMe, logout, changePassword } from '../controllers/authController.js';
 import auth from '../middleware/auth.js';
 
 const router = Router();
@@ -25,5 +25,8 @@ router.get('/me', auth, getMe);
 
 // POST /api/auth/logout — clears auth cookie
 router.post('/logout', logout);
+
+// PATCH /api/auth/change-password — protected
+router.patch('/change-password', auth, changePassword);
 
 export default router;
