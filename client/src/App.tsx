@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import AuthPage from './components/AuthPage';
@@ -14,6 +14,44 @@ type Page = 'dashboard' | 'profile' | 'settings';
 function AppContent() {
   const { token, user, loading, logout } = useAuth();
   const [page, setPage] = useState<Page>('dashboard');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+  // Close mobile nav on Escape key
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileNavOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [mobileNavOpen]);
+
+  // Focus trap: when nav opens, focus first nav button; when it closes, restore focus to hamburger
+  useEffect(() => {
+    if (mobileNavOpen) {
+      const firstBtn = mobileNavRef.current?.querySelector<HTMLElement>('.mobile-nav__item');
+      firstBtn?.focus();
+    } else {
+      hamburgerRef.current?.focus();
+    }
+  }, [mobileNavOpen]);
+
+  // Lock body scroll when mobile nav is open
+  useEffect(() => {
+    if (mobileNavOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileNavOpen]);
+
+  const navigateTo = useCallback((p: Page) => {
+    setPage(p);
+    setMobileNavOpen(false);
+  }, []);
 
   // Full-page spinner while checking stored token
   if (loading) {
@@ -75,6 +113,70 @@ function AppContent() {
               👤 {user?.email}
             </span>
             <button className="app-header__logout" onClick={logout}>
+              🚪 Logout
+            </button>
+          </div>
+
+          {/* Hamburger button — visible only on mobile */}
+          <button
+            ref={hamburgerRef}
+            className="hamburger"
+            onClick={() => setMobileNavOpen((o) => !o)}
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobile-nav"
+            aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          >
+            <span className={`hamburger__line${mobileNavOpen ? ' hamburger__line--open' : ''}`} />
+            <span className={`hamburger__line${mobileNavOpen ? ' hamburger__line--open' : ''}`} />
+            <span className={`hamburger__line${mobileNavOpen ? ' hamburger__line--open' : ''}`} />
+          </button>
+        </div>
+
+        {/* Mobile nav overlay */}
+        <div
+          className={`mobile-nav-overlay${mobileNavOpen ? ' mobile-nav-overlay--visible' : ''}`}
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+
+        {/* Mobile nav drawer */}
+        <div
+          id="mobile-nav"
+          ref={mobileNavRef}
+          className={`mobile-nav${mobileNavOpen ? ' mobile-nav--open' : ''}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+        >
+          <nav className="mobile-nav__list" aria-label="Main navigation">
+            <button
+              className={`mobile-nav__item${page === 'dashboard' ? ' mobile-nav__item--active' : ''}`}
+              onClick={() => navigateTo('dashboard')}
+              aria-current={page === 'dashboard' ? 'page' : undefined}
+            >
+              📊 Dashboard
+            </button>
+            <button
+              className={`mobile-nav__item${page === 'profile' ? ' mobile-nav__item--active' : ''}`}
+              onClick={() => navigateTo('profile')}
+              aria-current={page === 'profile' ? 'page' : undefined}
+            >
+              👤 Profile
+            </button>
+            <button
+              className={`mobile-nav__item${page === 'settings' ? ' mobile-nav__item--active' : ''}`}
+              onClick={() => navigateTo('settings')}
+              aria-current={page === 'settings' ? 'page' : undefined}
+            >
+              ⚙️ Settings
+            </button>
+          </nav>
+          <div className="mobile-nav__footer">
+            <ThemeToggle />
+            <span className="mobile-nav__email" title={user?.email}>
+              👤 {user?.email}
+            </span>
+            <button className="mobile-nav__logout" onClick={() => { logout(); setMobileNavOpen(false); }}>
               🚪 Logout
             </button>
           </div>
