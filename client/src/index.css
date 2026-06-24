@@ -24,45 +24,52 @@
   --space-16: 64px;
 
   /* ---- Border Radius ---- */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* ---- Light Mode Palette ---- */
-  --color-bg:            #faf9f7;
+  /* ---- Light Mode Palette (Slate Neutrals) ---- */
+  --color-bg:            #f8fafc;
   --color-surface:       #ffffff;
-  --color-surface-hover: #f5f3f0;
-  --color-border:        #e5e0da;
-  --color-border-light:  #f0ece6;
-  --color-text-primary:  #1a171b;
-  --color-text-secondary:#6b6570;
-  --color-text-muted:    #9e98a3;
-  --color-accent:        #7c3aed;
-  --color-accent-hover:  #6d28d9;
-  --color-accent-light:  rgba(124, 58, 237, 0.08);
-  --color-accent-border: rgba(124, 58, 237, 0.25);
+  --color-surface-hover: #f1f5f9;
+  --color-border:        #e2e8f0;
+  --color-border-light:  #f1f5f9;
+  --color-text:          #0f172a;
+  --color-text-primary:  #0f172a;
+  --color-text-secondary:#475569;
+  --color-text-muted:    #94a3b8;
+  --color-accent:        #6366f1;
+  --color-accent-hover:  #4f46e5;
+  --color-accent-light:  rgba(99, 102, 241, 0.06);
+  --color-accent-border: rgba(99, 102, 241, 0.2);
+  --color-accent-soft:   rgba(99, 102, 241, 0.04);
   --color-success:       #10b981;
-  --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-success-light: rgba(16, 185, 129, 0.08);
   --color-warning:       #f59e0b;
-  --color-warning-light: rgba(245, 158, 11, 0.1);
+  --color-warning-light: rgba(245, 158, 11, 0.08);
   --color-danger:        #ef4444;
-  --color-danger-light:  rgba(239, 68, 68, 0.08);
+  --color-danger-light:  rgba(239, 68, 68, 0.06);
   --color-info:          #3b82f6;
-  --color-info-light:    rgba(59, 130, 246, 0.08);
+  --color-info-light:    rgba(59, 130, 246, 0.06);
 
-  /* ---- Shadows ---- */
-  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0 12px 28px -8px rgba(0, 0, 0, 0.12), 0 4px 12px -4px rgba(0, 0, 0, 0.06);
+  /* ---- Glass Tokens ---- */
+  --glass-bg:            rgba(255, 255, 255, 0.72);
+  --glass-border:        rgba(255, 255, 255, 0.2);
+  --glass-blur:          blur(20px);
+
+  /* ---- Shadows (lighter, glass-appropriate) ---- */
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md:  0 2px 8px -2px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-lg:  0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-xl:  0 16px 48px -8px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 12px 32px -8px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.04);
 
   /* ---- Typography ---- */
-  --font-sans:   system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --font-sans:   'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
   --font-mono:   ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  --font-heading: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --text-xs:   0.75rem;    /* 12px */
   --text-sm:   0.875rem;   /* 14px */
@@ -89,7 +96,7 @@
   --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ---- Focus ---- */
-  --focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.35);
+  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.3);
   --focus-ring-offset: 2px;
 
   /* ---- Layout ---- */
@@ -98,39 +105,44 @@
   --header-height: auto;
 }
 
-/* ---- Dark Mode ---- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg:            #0f0d13;
-    --color-surface:       #1a1721;
-    --color-surface-hover: #221f2a;
-    --color-border:        #2d2a35;
-    --color-border-light:  #25222d;
-    --color-text-primary:  #f0edf4;
-    --color-text-secondary:#a09aaa;
-    --color-text-muted:    #6b6577;
-    --color-accent:        #a78bfa;
-    --color-accent-hover:  #c4b5fd;
-    --color-accent-light:  rgba(167, 139, 250, 0.12);
-    --color-accent-border: rgba(167, 139, 250, 0.3);
+/* ---- Dark Mode Palette (Slate-based, desaturated accents) ---- */
+[data-theme="dark"] {
+  --color-bg:            #0F172A;
+  --color-surface:       #1E293B;
+  --color-surface-hover: #334155;
+  --color-border:        rgba(255, 255, 255, 0.08);
+  --color-border-light:  rgba(255, 255, 255, 0.05);
+  --color-text:          #F1F5F9;
+  --color-text-primary:  #F1F5F9;
+  --color-text-secondary:#94A3B8;
+  --color-text-muted:    #64748B;
+  --color-accent:        #818CF8;
+  --color-accent-hover:  #6366F1;
+  --color-accent-light:  rgba(129, 140, 248, 0.1);
+  --color-accent-border: rgba(129, 140, 248, 0.25);
+  --color-accent-soft:   rgba(129, 140, 248, 0.06);
+  --color-success:       #34D399;
+  --color-success-light: rgba(52, 211, 153, 0.1);
+  --color-warning:       #FBBF24;
+  --color-warning-light: rgba(251, 191, 36, 0.1);
+  --color-danger:        #F87171;
+  --color-danger-light:  rgba(248, 113, 113, 0.1);
+  --color-info:          #60A5FA;
+  --color-info-light:    rgba(96, 165, 250, 0.1);
 
-    --color-success:       #34d399;
-    --color-success-light: rgba(52, 211, 153, 0.12);
-    --color-warning:       #fbbf24;
-    --color-warning-light: rgba(251, 191, 36, 0.12);
-    --color-danger:        #f87171;
-    --color-danger-light:  rgba(248, 113, 113, 0.1);
-    --color-info:          #60a5fa;
-    --color-info-light:    rgba(96, 165, 250, 0.12);
+  /* Glass (Dark) */
+  --glass-bg:            rgba(30, 41, 59, 0.85);
+  --glass-border:        rgba(255, 255, 255, 0.06);
 
-    --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
-    --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
-    --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-    --shadow-card-hover: 0 12px 28px -8px rgba(0, 0, 0, 0.6), 0 4px 12px -4px rgba(0, 0, 0, 0.3);
+  /* Shadows (Dark — stronger, near-black) */
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md:  0 2px 8px -2px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-lg:  0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+  --shadow-xl:  0 16px 48px -8px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
 
-    --focus-ring: 0 0 0 3px rgba(167, 139, 250, 0.4);
-  }
+  /* Focus Ring (Dark — lighter accent) */
+  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.3);
 }
 
 /* ---- Base Styles ---- */

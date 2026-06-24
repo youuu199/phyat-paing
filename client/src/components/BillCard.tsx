@@ -60,6 +60,8 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
   const categoryColor = CATEGORY_COLORS[bill.category as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.Other;
   const categoryIcon = CATEGORY_ICONS[bill.category as keyof typeof CATEGORY_ICONS] || CATEGORY_ICONS.Other;
 
+  const isOverdue = bill.dueDate && !bill.isPaid && new Date(bill.dueDate) < new Date();
+
   return (
     <>
       <article className="bill-card" aria-label={`Bill: ${bill.title}`}>
@@ -100,6 +102,11 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
               {categoryIcon} {bill.category}
             </span>
             <RecurringBadge bill={bill} />
+            {isOverdue && (
+              <span className="bill-card__overdue-badge" aria-label="Overdue">
+                ⚠ Overdue
+              </span>
+            )}
           </div>
         </div>
 
@@ -118,31 +125,33 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
           )}
         </p>
 
-        {onPaymentToggle && (
-          <div className="bill-card__payment">
-            <PaymentToggle
-              isPaid={bill.isPaid || false}
-              onToggle={() => onPaymentToggle(bill._id)}
-            />
+        <div className="bill-card__payment-row">
+          <div className="bill-card__actions">
+            <button
+              className="bill-card__edit"
+              onClick={() => setEditing(true)}
+              aria-label={`Edit bill: ${bill.title}`}
+            >
+              ✏️ Edit
+            </button>
+            <button
+              className={`bill-card__delete${confirmDelete ? ' bill-card__delete--confirm' : ''}`}
+              onClick={handleDeleteClick}
+              disabled={deleting}
+              aria-label={confirmDelete ? `Confirm delete: ${bill.title}` : `Delete bill: ${bill.title}`}
+            >
+              {deleting ? '⏳ Deleting...' : confirmDelete ? '⚠️ Click again to confirm' : '🗑 Delete'}
+            </button>
           </div>
-        )}
 
-        <div className="bill-card__actions">
-          <button
-            className="bill-card__edit"
-            onClick={() => setEditing(true)}
-            aria-label={`Edit bill: ${bill.title}`}
-          >
-            ✏️ Edit
-          </button>
-          <button
-            className={`bill-card__delete${confirmDelete ? ' bill-card__delete--confirm' : ''}`}
-            onClick={handleDeleteClick}
-            disabled={deleting}
-            aria-label={confirmDelete ? `Confirm delete: ${bill.title}` : `Delete bill: ${bill.title}`}
-          >
-            {deleting ? '⏳ Deleting...' : confirmDelete ? '⚠️ Click again to confirm' : '🗑 Delete'}
-          </button>
+          {onPaymentToggle && (
+            <div className="bill-card__payment">
+              <PaymentToggle
+                isPaid={bill.isPaid || false}
+                onToggle={() => onPaymentToggle(bill._id)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </article>

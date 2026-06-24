@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ReceiptText, Loader2, LogIn, UserPlus, AlertTriangle } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 export default function AuthPage() {
@@ -71,7 +72,7 @@ export default function AuthPage() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-card__header">
-          <span className="auth-card__icon">🧾</span>
+          <ReceiptText size={40} strokeWidth={1.5} className="auth-card__icon" />
           <h1 className="auth-card__title">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h1>
@@ -136,7 +137,8 @@ export default function AuthPage() {
 
           {error && (
             <p className="auth-form__error" role="alert">
-              ⚠️ {error}
+              <AlertTriangle size={16} strokeWidth={1.5} />
+              {error}
             </p>
           )}
 
@@ -145,13 +147,22 @@ export default function AuthPage() {
             type="submit"
             disabled={submitting}
           >
-            {submitting
-              ? mode === 'login'
-                ? '⏳ Signing in...'
-                : '⏳ Creating account...'
-              : mode === 'login'
-                ? '🔑 Sign In'
-                : '✨ Create Account'}
+            {submitting ? (
+              <>
+                <Loader2 size={16} strokeWidth={1.5} className="auth-form__submit-spinner" />
+                {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+              </>
+            ) : mode === 'login' ? (
+              <>
+                <LogIn size={16} strokeWidth={1.5} />
+                Sign In
+              </>
+            ) : (
+              <>
+                <UserPlus size={16} strokeWidth={1.5} />
+                Create Account
+              </>
+            )}
           </button>
         </form>
 

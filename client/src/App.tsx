@@ -1,52 +1,39 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { Menu, X, LayoutDashboard, BarChart3, User, Settings, LogOut, ReceiptText, Loader2 } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import AuthPage from './components/AuthPage';
 import BillDashboard from './components/BillDashboard';
+import AnalyticsPage from './components/AnalyticsPage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
 import ThemeToggle from './components/ThemeToggle';
+import MobileNav from './components/MobileNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
-type Page = 'dashboard' | 'profile' | 'settings';
+type Page = 'dashboard' | 'analytics' | 'profile' | 'settings';
+
+function Hamburger({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
+  return (
+    <button
+      className="hamburger"
+      onClick={onClick}
+      aria-expanded={isOpen}
+      aria-controls="mobile-nav"
+      aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+    >
+      {isOpen ? <X size={22} strokeWidth={1.5} /> : <Menu size={22} strokeWidth={1.5} />}
+    </button>
+  );
+}
 
 function AppContent() {
   const { token, user, loading, logout } = useAuth();
   const [page, setPage] = useState<Page>('dashboard');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const mobileNavRef = useRef<HTMLDivElement>(null);
-  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
-  // Close mobile nav on Escape key
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMobileNavOpen(false);
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [mobileNavOpen]);
-
-  // Focus trap: when nav opens, focus first nav button; when it closes, restore focus to hamburger
-  useEffect(() => {
-    if (mobileNavOpen) {
-      const firstBtn = mobileNavRef.current?.querySelector<HTMLElement>('.mobile-nav__item');
-      firstBtn?.focus();
-    } else {
-      hamburgerRef.current?.focus();
-    }
-  }, [mobileNavOpen]);
-
-  // Lock body scroll when mobile nav is open
-  useEffect(() => {
-    if (mobileNavOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileNavOpen]);
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
 
   const navigateTo = useCallback((p: Page) => {
     setPage(p);
@@ -57,7 +44,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="auth-loading">
-        <span className="auth-loading__spinner">⏳</span>
+        <Loader2 className="auth-loading__spinner" size={32} strokeWidth={1.5} />
         <p>Loading...</p>
       </div>
     );
@@ -79,8 +66,9 @@ function AppContent() {
       <header className="app-header">
         <div className="app-header__inner">
           <div>
-            <h1 style={{ cursor: 'pointer' }} onClick={() => setPage('dashboard')}>
-              🧾 Smart Bill Organizer
+            <h1 className="app-title" style={{ cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
+              <ReceiptText size={24} strokeWidth={1.75} className="app-title__icon" />
+              Smart Bill Organizer
             </h1>
             <p>Upload your bills and receipts — we'll extract the data automatically.</p>
           </div>
@@ -91,101 +79,66 @@ function AppContent() {
                 onClick={() => setPage('dashboard')}
                 aria-current={page === 'dashboard' ? 'page' : undefined}
               >
-                📊 Dashboard
+                <LayoutDashboard size={16} strokeWidth={1.75} />
+                Dashboard
+              </button>
+              <button
+                className={`app-header__nav-btn${page === 'analytics' ? ' app-header__nav-btn--active' : ''}`}
+                onClick={() => setPage('analytics')}
+                aria-current={page === 'analytics' ? 'page' : undefined}
+              >
+                <BarChart3 size={16} strokeWidth={1.75} />
+                Analytics
               </button>
               <button
                 className={`app-header__nav-btn${page === 'profile' ? ' app-header__nav-btn--active' : ''}`}
                 onClick={() => setPage('profile')}
                 aria-current={page === 'profile' ? 'page' : undefined}
               >
-                👤 Profile
+                <User size={16} strokeWidth={1.75} />
+                Profile
               </button>
               <button
                 className={`app-header__nav-btn${page === 'settings' ? ' app-header__nav-btn--active' : ''}`}
                 onClick={() => setPage('settings')}
                 aria-current={page === 'settings' ? 'page' : undefined}
               >
-                ⚙️ Settings
+                <Settings size={16} strokeWidth={1.75} />
+                Settings
               </button>
             </nav>
             <ThemeToggle />
             <span className="app-header__email" title={user?.email}>
-              👤 {user?.email}
+              <User size={14} strokeWidth={1.5} />
+              {user?.email}
             </span>
             <button className="app-header__logout" onClick={logout}>
-              🚪 Logout
+              <LogOut size={14} strokeWidth={1.5} />
+              Logout
             </button>
           </div>
 
-          {/* Hamburger button — visible only on mobile */}
-          <button
-            ref={hamburgerRef}
-            className="hamburger"
+          <Hamburger
+            isOpen={mobileNavOpen}
             onClick={() => setMobileNavOpen((o) => !o)}
-            aria-expanded={mobileNavOpen}
-            aria-controls="mobile-nav"
-            aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          >
-            <span className={`hamburger__line${mobileNavOpen ? ' hamburger__line--open' : ''}`} />
-            <span className={`hamburger__line${mobileNavOpen ? ' hamburger__line--open' : ''}`} />
-            <span className={`hamburger__line${mobileNavOpen ? ' hamburger__line--open' : ''}`} />
-          </button>
+          />
         </div>
 
-        {/* Mobile nav overlay */}
-        <div
-          className={`mobile-nav-overlay${mobileNavOpen ? ' mobile-nav-overlay--visible' : ''}`}
-          onClick={() => setMobileNavOpen(false)}
-          aria-hidden="true"
-        />
-
-        {/* Mobile nav drawer */}
-        <div
-          id="mobile-nav"
-          ref={mobileNavRef}
-          className={`mobile-nav${mobileNavOpen ? ' mobile-nav--open' : ''}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-        >
-          <nav className="mobile-nav__list" aria-label="Main navigation">
-            <button
-              className={`mobile-nav__item${page === 'dashboard' ? ' mobile-nav__item--active' : ''}`}
-              onClick={() => navigateTo('dashboard')}
-              aria-current={page === 'dashboard' ? 'page' : undefined}
-            >
-              📊 Dashboard
-            </button>
-            <button
-              className={`mobile-nav__item${page === 'profile' ? ' mobile-nav__item--active' : ''}`}
-              onClick={() => navigateTo('profile')}
-              aria-current={page === 'profile' ? 'page' : undefined}
-            >
-              👤 Profile
-            </button>
-            <button
-              className={`mobile-nav__item${page === 'settings' ? ' mobile-nav__item--active' : ''}`}
-              onClick={() => navigateTo('settings')}
-              aria-current={page === 'settings' ? 'page' : undefined}
-            >
-              ⚙️ Settings
-            </button>
-          </nav>
-          <div className="mobile-nav__footer">
-            <ThemeToggle />
-            <span className="mobile-nav__email" title={user?.email}>
-              👤 {user?.email}
-            </span>
-            <button className="mobile-nav__logout" onClick={() => { logout(); setMobileNavOpen(false); }}>
-              🚪 Logout
-            </button>
-          </div>
-        </div>
       </header>
+
+      <MobileNav
+        isOpen={mobileNavOpen}
+        page={page}
+        userEmail={user?.email}
+        onNavigate={navigateTo}
+        onClose={closeMobileNav}
+        onLogout={logout}
+      />
 
       <main id="main-content" tabIndex={-1}>
         <ErrorBoundary>
           {page === 'dashboard' && <BillDashboard />}
+          {page === 'analytics' && <AnalyticsPage />}
           {page === 'profile' && <ProfilePage onBack={() => setPage('dashboard')} />}
           {page === 'settings' && <SettingsPage onBack={() => setPage('dashboard')} />}
         </ErrorBoundary>

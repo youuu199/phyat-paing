@@ -3,9 +3,6 @@ import BillCard from './BillCard';
 import CategoryTabs from './CategoryTabs';
 import BillUploader from './BillUploader';
 import Sidebar from './Sidebar';
-import SpendingOverview from './SpendingOverview';
-import MonthlyTrendChart from './MonthlyTrendChart';
-import UpcomingBills from './UpcomingBills';
 import { useToast } from './Toast';
 import { useAuth } from './AuthContext';
 import type { Bill, MonthEntry } from '../types';
@@ -137,12 +134,30 @@ export default function BillDashboard() {
   };
 
   const handlePaymentToggle = async (id: string) => {
+    // Snapshot current state in case we need to revert
+    const previousBills = bills;
+
+    // Optimistic update: flip isPaid immediately in local state
+    setBills((prev) =>
+      prev.map((b) =>
+        b._id === id
+          ? { ...b, isPaid: !b.isPaid, paidAt: !b.isPaid ? new Date().toISOString() : undefined }
+          : b
+      )
+    );
+
     try {
       const res = await apiFetch(`/api/bills/${id}/payment`, { method: 'PATCH' });
       if (!res.ok) throw new Error('Payment toggle failed');
-      fetchBills();
+      const updated = await res.json();
+      // Sync with server response
+      setBills((prev) =>
+        prev.map((b) => (b._id === id ? { ...b, isPaid: updated.isPaid, paidAt: updated.paidAt } : b))
+      );
       toast('Payment status updated', 'success');
     } catch (err) {
+      // Revert optimistic update on failure
+      setBills(previousBills);
       const msg = err instanceof Error ? err.message : 'Failed to update payment';
       toast(msg, 'error');
     }
@@ -177,15 +192,6 @@ export default function BillDashboard() {
       {/* Main content */}
       <div className="dashboard">
         <BillUploader onUploadSuccess={handleUploadSuccess} />
-
-        {/* Analytics section */}
-        <div className="dashboard__analytics">
-          <SpendingOverview />
-          <div className="dashboard__analytics-side">
-            <MonthlyTrendChart />
-            <UpcomingBills />
-          </div>
-        </div>
 
         {/* Summary row with mobile sidebar toggle */}
         <div className="summary-row">
