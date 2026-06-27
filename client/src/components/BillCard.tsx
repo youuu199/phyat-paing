@@ -4,6 +4,8 @@ import { CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
 import BillEditModal from './BillEditModal';
 import PaymentToggle from './PaymentToggle';
 import RecurringBadge from './RecurringBadge';
+import { useTranslation } from '../i18n/useTranslation';
+import { formatDate } from '../i18n/formatDate';
 
 interface BillCardProps {
   bill: Bill;
@@ -18,6 +20,7 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
   const [viewing, setViewing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { t, lang } = useTranslation();
 
   // Close viewer on Escape key
   const handleKeyDown = useCallback(
@@ -38,11 +41,7 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
     };
   }, [viewing, handleKeyDown]);
 
-  const date = new Date(bill.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const date = formatDate(bill.createdAt, lang, 'short');
 
   const handleDeleteClick = () => {
     if (confirmDelete) {
@@ -103,8 +102,8 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
             </span>
             <RecurringBadge bill={bill} />
             {isOverdue && (
-              <span className="bill-card__overdue-badge" aria-label="Overdue">
-                ⚠ Overdue
+              <span className="bill-card__overdue-badge" aria-label={t('bills.overdue')}>
+                ⚠ {t('bills.overdue')}
               </span>
             )}
           </div>
@@ -119,8 +118,7 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
           📅 {date}
           {bill.dueDate && (
             <span className="bill-card__due-date">
-              {' · Due: '}
-              {new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {' · '}{t('bills.due')}: {formatDate(bill.dueDate, lang, 'short')}
             </span>
           )}
         </p>
@@ -130,17 +128,17 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
             <button
               className="bill-card__edit"
               onClick={() => setEditing(true)}
-              aria-label={`Edit bill: ${bill.title}`}
+              aria-label={`${t('bills.edit')}: ${bill.title}`}
             >
-              ✏️ Edit
+              ✏️ {t('bills.edit')}
             </button>
             <button
               className={`bill-card__delete${confirmDelete ? ' bill-card__delete--confirm' : ''}`}
               onClick={handleDeleteClick}
               disabled={deleting}
-              aria-label={confirmDelete ? `Confirm delete: ${bill.title}` : `Delete bill: ${bill.title}`}
+              aria-label={confirmDelete ? `${t('bills.confirmDelete')}: ${bill.title}` : `${t('bills.delete')}: ${bill.title}`}
             >
-              {deleting ? '⏳ Deleting...' : confirmDelete ? '⚠️ Click again to confirm' : '🗑 Delete'}
+              {deleting ? `⏳ ${t('bills.deleting')}` : confirmDelete ? `⚠️ ${t('bills.confirmDelete')}` : `🗑 ${t('bills.delete')}`}
             </button>
           </div>
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { ReceiptText, Loader2, LogIn, UserPlus, AlertTriangle } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function AuthPage() {
   const { login, register } = useAuth();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,27 +31,27 @@ export default function AuthPage() {
 
     // Client-side validation
     if (!email.trim() || !password) {
-      setError('Email and password are required');
+      setError(t('auth.errorEmailRequired'));
       return;
     }
 
     if (!email.includes('@') || email.length < 5) {
-      setError('Please enter a valid email address');
+      setError(t('auth.errorInvalidEmail'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('auth.errorPasswordLength'));
       return;
     }
 
     if (!/\d/.test(password)) {
-      setError('Password must contain at least one number');
+      setError(t('auth.errorPasswordNumber'));
       return;
     }
 
     if (mode === 'register' && password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.errorPasswordMismatch'));
       return;
     }
 
@@ -62,7 +64,7 @@ export default function AuthPage() {
       }
       // AuthContext will update and App will re-render to dashboard
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('auth.errorGeneric'));
     } finally {
       setSubmitting(false);
     }
@@ -74,19 +76,19 @@ export default function AuthPage() {
         <div className="auth-card__header">
           <ReceiptText size={40} strokeWidth={1.5} className="auth-card__icon" />
           <h1 className="auth-card__title">
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+            {mode === 'login' ? t('auth.welcomeBack') : t('auth.createAccount')}
           </h1>
           <p className="auth-card__subtitle">
             {mode === 'login'
-              ? 'Sign in to manage your bills'
-              : 'Start organizing your bills in seconds'}
+              ? t('auth.signInSubtitle')
+              : t('auth.registerSubtitle')}
           </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-form__field">
             <label className="auth-form__label" htmlFor="auth-email">
-              Email
+              {t('auth.email')}
             </label>
             <input
               className="auth-form__input"
@@ -103,13 +105,13 @@ export default function AuthPage() {
 
           <div className="auth-form__field">
             <label className="auth-form__label" htmlFor="auth-password">
-              Password
+              {t('auth.password')}
             </label>
             <input
               className="auth-form__input"
               id="auth-password"
               type="password"
-              placeholder="At least 8 characters with a number"
+              placeholder={t('auth.passwordHint')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -120,13 +122,13 @@ export default function AuthPage() {
           {mode === 'register' && (
             <div className="auth-form__field">
               <label className="auth-form__label" htmlFor="auth-confirm">
-                Confirm Password
+                {t('auth.confirmPassword')}
               </label>
               <input
                 className="auth-form__input"
                 id="auth-confirm"
                 type="password"
-                placeholder="Re-enter your password"
+                placeholder={t('auth.confirmHint')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
@@ -150,17 +152,17 @@ export default function AuthPage() {
             {submitting ? (
               <>
                 <Loader2 size={16} strokeWidth={1.5} className="auth-form__submit-spinner" />
-                {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+                {mode === 'login' ? t('auth.signingIn') : t('auth.creatingAccount')}
               </>
             ) : mode === 'login' ? (
               <>
                 <LogIn size={16} strokeWidth={1.5} />
-                Sign In
+                {t('auth.signIn')}
               </>
             ) : (
               <>
                 <UserPlus size={16} strokeWidth={1.5} />
-                Create Account
+                {t('auth.register')}
               </>
             )}
           </button>
@@ -169,16 +171,16 @@ export default function AuthPage() {
         <p className="auth-card__toggle">
           {mode === 'login' ? (
             <>
-              Don't have an account?{' '}
+              {t('auth.noAccount')}{' '}
               <button className="auth-card__toggle-btn" onClick={toggleMode}>
-                Register
+                {t('auth.registerLink')}
               </button>
             </>
           ) : (
             <>
-              Already have an account?{' '}
+              {t('auth.hasAccount')}{' '}
               <button className="auth-card__toggle-btn" onClick={toggleMode}>
-                Sign in
+                {t('auth.signInLink')}
               </button>
             </>
           )}

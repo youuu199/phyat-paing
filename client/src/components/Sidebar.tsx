@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface MonthEntry {
   year: number;
@@ -30,6 +31,7 @@ export default function Sidebar({
   onClose,
 }: SidebarProps) {
   const sidebarRef = useRef<HTMLElement>(null);
+  const { t } = useTranslation();
 
   // Close on Escape key
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function Sidebar({
   const sidebarContent = (
     <>
       <div className="sidebar__header">
-        <h3 className="sidebar__title">📅 Date Filter</h3>
+        <h3 className="sidebar__title">📅 {t('sidebar.title')}</h3>
         <button
           className="sidebar__close"
           onClick={onClose}
@@ -98,11 +100,11 @@ export default function Sidebar({
         onClick={() => handleSelect(null, null)}
         aria-pressed={isAllTime}
       >
-        <span>All Time</span>
+        <span>{t('sidebar.allTime')}</span>
       </button>
 
       {years.length === 0 && (
-        <p className="sidebar__empty">No bills yet — upload one to get started!</p>
+        <p className="sidebar__empty">{t('sidebar.empty')}</p>
       )}
 
       <nav aria-label="Browse bills by year and month">

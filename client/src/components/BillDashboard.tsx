@@ -5,6 +5,7 @@ import BillUploader from './BillUploader';
 import Sidebar from './Sidebar';
 import { useToast } from './Toast';
 import { useAuth } from './AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 import type { Bill, MonthEntry } from '../types';
 
 const SKELETON_COUNT = 6;
@@ -38,6 +39,7 @@ export default function BillDashboard() {
 
   const { toast } = useToast();
   const { apiFetch } = useAuth();
+  const { t } = useTranslation();
   const initialLoadDone = useRef(false);
 
   const fetchBills = useCallback(async () => {
@@ -102,9 +104,9 @@ export default function BillDashboard() {
       if (!res.ok) throw new Error('Delete failed');
       fetchBills();
       fetchMonths();
-      toast('Bill deleted successfully', 'success');
+      toast(t('bills.deleted'), 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to delete bill';
+      const msg = err instanceof Error ? err.message : t('bills.deleteFailed');
       toast(msg, 'error');
       throw err;
     }
@@ -113,7 +115,7 @@ export default function BillDashboard() {
   const handleUploadSuccess = () => {
     fetchBills();
     fetchMonths();
-    toast('Bill processed and saved!', 'success');
+    toast(t('bills.processed'), 'success');
   };
 
   const handleUpdate = async (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => {
@@ -125,9 +127,9 @@ export default function BillDashboard() {
       });
       if (!res.ok) throw new Error('Update failed');
       fetchBills();
-      toast('Bill updated successfully', 'success');
+      toast(t('bills.updated'), 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to update bill';
+      const msg = err instanceof Error ? err.message : t('bills.updateFailed');
       toast(msg, 'error');
       throw err;
     }
@@ -154,11 +156,11 @@ export default function BillDashboard() {
       setBills((prev) =>
         prev.map((b) => (b._id === id ? { ...b, isPaid: updated.isPaid, paidAt: updated.paidAt } : b))
       );
-      toast('Payment status updated', 'success');
+      toast(t('bills.paymentUpdated'), 'success');
     } catch (err) {
       // Revert optimistic update on failure
       setBills(previousBills);
-      const msg = err instanceof Error ? err.message : 'Failed to update payment';
+      const msg = err instanceof Error ? err.message : t('bills.paymentFailed');
       toast(msg, 'error');
     }
   };
@@ -197,7 +199,7 @@ export default function BillDashboard() {
         <div className="summary-row">
           <div className="dashboard__summary" style={{ marginBottom: 0 }}>
             <h2>
-              {category === 'All' ? 'All Bills' : category}
+              {category === 'All' ? t('bills.allBills') : category}
               {categoryLabel && (
                 <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginLeft: 'var(--space-2)' }}>
                   · {categoryLabel}
@@ -207,8 +209,8 @@ export default function BillDashboard() {
             <p className="dashboard__total">
               {!loading && (
                 <>
-                  {bills.length} bill{bills.length !== 1 ? 's' : ''} ·{' '}
-                  <strong>{totalSpent.toLocaleString()} MMK</strong> total
+                  {t('bills.count', { count: bills.length, plural: bills.length !== 1 ? 's' : '' })} ·{' '}
+                  <strong>{t('bills.total', { amount: totalSpent.toLocaleString() })}</strong>
                 </>
               )}
             </p>
@@ -217,9 +219,9 @@ export default function BillDashboard() {
           <button
             className="sidebar-toggle"
             onClick={() => setSidebarOpen(true)}
-            aria-label="Open date filter"
+            aria-label={t('bills.filter')}
           >
-            📅 Filter
+            📅 {t('bills.filter')}
           </button>
         </div>
 
@@ -234,16 +236,16 @@ export default function BillDashboard() {
           <input
             className="dashboard__search-input"
             type="text"
-            placeholder="Search bills by title..."
+            placeholder={t('bills.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search bills"
+            aria-label={t('bills.searchPlaceholder')}
           />
           {searchQuery && (
             <button
               className="dashboard__search-clear"
               onClick={() => setSearchQuery('')}
-              aria-label="Clear search"
+              aria-label={t('bills.clearSearch')}
             >
               ✕
             </button>
@@ -256,7 +258,7 @@ export default function BillDashboard() {
             <span className="dashboard__error-icon">⚠️</span>
             <p className="dashboard__error-message">{error}</p>
             <button className="dashboard__retry-btn" onClick={handleRetry}>
-              🔄 Try Again
+              🔄 {t('bills.retry')}
             </button>
           </div>
         )}
@@ -278,10 +280,14 @@ export default function BillDashboard() {
             </span>
             <p className="dashboard__empty-text">
               {searchQuery
-                ? `No bills matching "${searchQuery}"`
-                : `No bills found${category !== 'All' ? ` in "${category}"` : ''}${categoryLabel ? ` for ${categoryLabel}` : ''}.`
+                ? t('bills.noMatch', { query: searchQuery })
+                : category !== 'All'
+                  ? t('bills.noCategory', { category })
+                  : categoryLabel
+                    ? t('bills.noDate', { date: categoryLabel })
+                    : t('bills.noBills')
               }
-              {!searchQuery && ' Upload your first bill above!'}
+              {!searchQuery && ` ${t('bills.uploadFirst')}`}
             </p>
           </div>
         )}

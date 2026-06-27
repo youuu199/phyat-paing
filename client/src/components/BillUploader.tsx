@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface BillUploaderProps {
   onUploadSuccess: () => void;
@@ -23,6 +24,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { apiFetch } = useAuth();
+  const { t } = useTranslation();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] || null;
@@ -32,7 +34,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
 
   const handleUpload = async () => {
     if (!file) {
-      setError('Please select an image file first.');
+      setError(t('uploader.selectFirst'));
       return;
     }
 
@@ -77,7 +79,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
       // Tell parent to refresh
       onUploadSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      setError(err instanceof Error ? err.message : t('uploader.uploadFailed'));
     } finally {
       setStage('idle');
     }
@@ -114,7 +116,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
     if (!dropped) return;
 
     if (!dropped.type.startsWith('image/')) {
-      setError('Please drop an image file (JPEG, PNG, WebP, etc.).');
+      setError(t('uploader.dropImage'));
       return;
     }
 
@@ -144,11 +146,11 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
         {isUploading ? '⏳' : file ? '📄' : '📤'}
       </span>
 
-      <h2>{isUploading ? 'Processing Bill...' : 'Upload a Bill'}</h2>
+      <h2>{isUploading ? t('uploader.processing') : t('uploader.title')}</h2>
 
       {!isUploading && (
         <p className="bill-uploader__hint">
-          Drop your utility bill or receipt image here, or click to browse.
+          {t('uploader.hint')}
         </p>
       )}
 
@@ -172,7 +174,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
           className="bill-uploader__file-label"
           htmlFor="bill-file-input"
         >
-          📁 Choose File
+          📁 {t('uploader.chooseFile')}
         </label>
 
         <button
@@ -180,7 +182,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
           onClick={handleUpload}
           disabled={!file || isUploading}
         >
-          {isUploading ? STAGE_MESSAGES[stage] : '🚀 Upload & Process'}
+          {isUploading ? STAGE_MESSAGES[stage] : `🚀 ${t('uploader.upload')}`}
         </button>
       </div>
 
@@ -196,7 +198,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
       )}
 
       {dragOver && (
-        <p className="bill-uploader__drop-hint">Drop your image here</p>
+        <p className="bill-uploader__drop-hint">{t('uploader.dropHere')}</p>
       )}
 
       {error && (

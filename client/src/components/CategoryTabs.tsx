@@ -1,3 +1,7 @@
+import { CATEGORY_LABELS } from '../types';
+import type { Category } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+
 const CATEGORIES = [
   'All',
   'Electricity',
@@ -24,10 +28,12 @@ interface CategoryTabsProps {
 }
 
 export default function CategoryTabs({ selected, onSelect }: CategoryTabsProps) {
+  const { t, lang } = useTranslation();
   return (
     <nav className="category-tabs" role="tablist" aria-label="Filter bills by category">
       {CATEGORIES.map((cat) => {
         const isActive = selected === cat;
+        const label = cat === 'All' ? t('categories.All') : CATEGORY_LABELS[cat as Category]?.[lang] || cat;
         return (
           <button
             key={cat}
@@ -36,7 +42,7 @@ export default function CategoryTabs({ selected, onSelect }: CategoryTabsProps) 
             className={`category-tabs__tab${isActive ? ' category-tabs__tab--active' : ''}`}
             onClick={() => onSelect(cat)}
           >
-            {CATEGORY_EMOJI[cat]} {cat}
+            {CATEGORY_EMOJI[cat]} {label}
           </button>
         );
       })}
