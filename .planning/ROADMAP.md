@@ -95,10 +95,25 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Split App.css into per-component files, replace inline styles, add dark mode tokens, add Bill indexes
 
+### Phase 6: Navbar Refactoring
+**Goal**: Refactor the navigation bar to be more maintainable, consistent, and accessible — extract shared nav logic, improve mobile experience, and unify icon/brand display
+**Depends on**: Phase 5
+**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05
+**Success Criteria** (what must be TRUE):
+  1. Shared NavItem component handles both desktop header nav and mobile slide-over nav
+  2. Navigation uses the same icon set (lucide-react) consistently — no emoji in nav
+  3. Mobile nav has proper focus trap, Escape key handling, and aria attributes
+  4. Brand name uses i18n translation key (not hardcoded)
+  5. All nav items are keyboard accessible with visible focus indicators
+**Plans**: TBD
+
+Plans:
+- [ ] 06-01: Refactor navbar with shared NavItem, consistent icons, and accessibility
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -107,3 +122,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 3. Core Component Translation | 0/1 | Not started | - |
 | 4. Analytics, Settings & Polish | 0/1 | Not started | - |
 | 5. CSS Refactoring & Code Cleanup | 1/1 | Complete | 2026-06-27 |
+| 6. Navbar Refactoring | 0/1 | Not started | - |
