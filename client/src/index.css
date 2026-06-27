@@ -103,6 +103,9 @@
   --content-max-width: 1200px;
   --sidebar-width: 260px;
   --header-height: auto;
+
+  /* ---- Accent On-Color ---- */
+  --color-on-accent: #fff;
 }
 
 /* ---- Dark Mode Palette (Slate-based, desaturated accents) ---- */
@@ -143,6 +146,12 @@
 
   /* Focus Ring (Dark — lighter accent) */
   --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.3);
+
+  /* ---- Dark Mode Extended Tokens ---- */
+  --color-on-accent: #fff;
+  --color-danger-dark: #450a0a;
+  --color-danger-border-dark: #dc2626;
+  --color-warning-dark: #451a03;
 }
 
 /* ---- Base Styles ---- */

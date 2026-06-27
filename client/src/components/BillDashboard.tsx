@@ -17,7 +17,7 @@ function SkeletonCard() {
     <div className="skeleton-card" aria-hidden="true">
       <div className="skeleton skeleton-card__image" />
       <div className="skeleton-card__body">
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div className="skeleton-card__header">
           <div className="skeleton skeleton-card__title" />
           <div className="skeleton skeleton-card__badge" />
         </div>
@@ -199,11 +199,11 @@ export default function BillDashboard() {
 
         {/* Summary row with mobile sidebar toggle */}
         <div className="summary-row">
-          <div className="dashboard__summary" style={{ marginBottom: 0 }}>
+          <div className="dashboard__summary dashboard__summary--flush">
             <h2>
               {category === 'All' ? t('bills.allBills') : category}
               {categoryLabel && (
-                <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginLeft: 'var(--space-2)' }}>
+                <span className="dashboard__summary-meta">
                   · {categoryLabel}
                 </span>
               )}

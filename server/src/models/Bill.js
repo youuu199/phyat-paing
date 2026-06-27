@@ -69,6 +69,10 @@ const billSchema = new Schema(
   { timestamps: true }
 );
 
+// Compound indexes for common query patterns
+billSchema.index({ userId: 1, createdAt: -1 });
+billSchema.index({ userId: 1, category: 1 });
+
 const Bill = model('Bill', billSchema);
 
 export default Bill;

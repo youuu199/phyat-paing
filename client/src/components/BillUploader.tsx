@@ -192,7 +192,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
           <span className="bill-uploader__selected-pill">
             ✅ {file.name}
           </span>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
+          <span className="uploader__hint">
             ({(file.size / 1024).toFixed(1)} KB)
           </span>
         </p>

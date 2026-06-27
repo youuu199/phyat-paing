@@ -117,6 +117,8 @@
 .modal-form__category-btn--active {
   color: var(--color-text);
   font-weight: var(--font-weight-medium);
+  border-color: var(--cat-color);
+  background-color: color-mix(in srgb, var(--cat-color) 12%, transparent);
 }
 
 .modal-form__error {

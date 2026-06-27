@@ -346,3 +346,32 @@
     border-color: var(--color-accent-border);
   }
 }
+
+/* ---- Skeleton Card Header ---- */
+.skeleton-card__header {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ---- Summary Flush Modifier ---- */
+.dashboard__summary--flush {
+  margin-bottom: 0;
+}
+
+/* ---- Summary Meta Text ---- */
+.dashboard__summary-meta {
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-left: var(--space-2);
+}
+
+/* ---- Budget Alert Fill ---- */
+.budget-alert__fill {
+  background: linear-gradient(to right, var(--bar-color) var(--bar-pct), transparent var(--bar-pct));
+}
+
+/* ---- Budget Alert Label ---- */
+.budget-alert__label {
+  color: var(--bar-color);
+}

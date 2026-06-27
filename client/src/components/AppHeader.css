@@ -311,3 +311,8 @@
     border-color: var(--color-accent-border);
   }
 }
+
+/* ---- App Title Clickable ---- */
+.app-title--clickable {
+  cursor: pointer;
+}

@@ -98,7 +98,7 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
           <div className="bill-card__badges">
             <span
               className="bill-card__category"
-              style={{ backgroundColor: categoryColor }}
+              style={{ '--category-color': categoryColor } as React.CSSProperties}
             >
               {categoryIcon} {bill.category}
             </span>

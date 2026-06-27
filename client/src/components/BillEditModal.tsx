@@ -100,10 +100,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
                   key={cat}
                   type="button"
                   className={`modal-form__category-btn${category === cat ? ' modal-form__category-btn--active' : ''}`}
-                  style={{
-                    borderColor: category === cat ? CATEGORY_COLORS[cat] : undefined,
-                    backgroundColor: category === cat ? `${CATEGORY_COLORS[cat]}20` : undefined,
-                  }}
+                  style={{ '--cat-color': CATEGORY_COLORS[cat] } as React.CSSProperties}
                   onClick={() => setCategory(cat)}
                   disabled={saving}
                 >

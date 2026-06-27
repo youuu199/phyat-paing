@@ -4,27 +4,13 @@ import { useAuth } from './AuthContext';
 import type { BillStats, Category, BudgetLimits } from '../types';
 import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LABELS } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
-
-const BUDGET_STORAGE_KEY = 'bill-organizer-budgets';
-
-function loadBudgets(): BudgetLimits {
-  try {
-    const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveBudgets(budgets: BudgetLimits) {
-  localStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(budgets));
-}
+import { useBudgets } from '../hooks/useBudgets';
 
 export default function SpendingOverview() {
   const [stats, setStats] = useState<BillStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBudgets, setShowBudgets] = useState(false);
-  const [budgets, setBudgets] = useState<BudgetLimits>(loadBudgets);
+  const { budgets, setBudgets } = useBudgets();
   const { apiFetch } = useAuth();
   const { t, lang } = useTranslation();
 
@@ -48,9 +34,7 @@ export default function SpendingOverview() {
 
   const handleBudgetChange = (category: Category, value: string) => {
     const num = value ? parseInt(value, 10) : undefined;
-    const updated = { ...budgets, [category]: num };
-    setBudgets(updated);
-    saveBudgets(updated);
+    setBudgets((prev) => ({ ...prev, [category]: num }));
   };
 
   const totalSpent = stats.reduce((sum, s) => sum + s.total, 0);
@@ -69,7 +53,7 @@ export default function SpendingOverview() {
           <h3>📊 {t('spending.title')}</h3>
         </div>
         <div className="spending-overview__loading">
-          <div className="skeleton" style={{ height: 200 }} />
+          <div className="skeleton skeleton--chart" />
         </div>
       </div>
     );
@@ -135,17 +119,14 @@ export default function SpendingOverview() {
                   <span className="spending-overview__item-count">{t('spending.bills', { count: s.count, plural: s.count !== 1 ? 's' : '' })}</span>
                 </div>
                 {budget !== undefined && budget > 0 && pct !== null && (
-                  <div className="budget-alert">
+                  <div className="budget-alert" style={{ '--bar-color': barColor } as React.CSSProperties}>
                     <div className="budget-alert__bar">
                       <div
                         className="budget-alert__fill"
-                        style={{
-                          width: `${Math.min(pct, 100)}%`,
-                          backgroundColor: barColor,
-                        }}
+                        style={{ '--bar-pct': `${Math.min(pct, 100)}%` } as React.CSSProperties}
                       />
                     </div>
-                    <span className="budget-alert__label" style={{ color: barColor }}>
+                    <span className="budget-alert__label">
                       {t('spending.budgetOf', { pct, budget: budget.toLocaleString() })}
                     </span>
                   </div>

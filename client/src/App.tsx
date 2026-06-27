@@ -71,7 +71,7 @@ function AppContent() {
       <header className="app-header">
         <div className="app-header__inner">
           <div>
-            <h1 className="app-title" style={{ cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
+            <h1 className="app-title app-title--clickable" onClick={() => navigateTo('dashboard')}>
               <ReceiptText size={24} strokeWidth={1.75} className="app-title__icon" />
               {t('app.title')}
             </h1>
