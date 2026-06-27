@@ -11,18 +11,12 @@
     gap: var(--space-2);
   }
 
-  .app-header__nav {
-    width: 100%;
-    justify-content: center;
-    margin-right: 0;
-    order: -1;
-  }
-
-  .app-header__nav-btn {
-    flex: 1;
-    text-align: center;
-    padding: var(--space-2) var(--space-2);
-    font-size: var(--text-xs);
+  /* Hide desktop nav, email, theme toggle, and logout — all go inside hamburger */
+  .app-header__nav,
+  .app-header__email,
+  .app-header__logout,
+  .app-header__user .theme-toggle {
+    display: none;
   }
 
   .page-container {
@@ -42,16 +36,6 @@
   .settings-page__field {
     flex-direction: column;
     align-items: flex-start;
-  }
-}
-
-@media (max-width: 640px) {
-  /* Hide desktop nav, email, theme toggle, and logout on mobile */
-  .app-header__nav,
-  .app-header__email,
-  .app-header__logout,
-  .app-header__user .theme-toggle {
-    display: none;
   }
 }
 /* ---- Hamburger Button (hidden on desktop, shown on mobile) ---- */
