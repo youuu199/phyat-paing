@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useAuth } from './AuthContext';
-import type { BillStats, Category, BudgetLimits } from '../types';
+import type { BillStats, Category } from '../types';
 import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LABELS } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
 import { useBudgets } from '../hooks/useBudgets';

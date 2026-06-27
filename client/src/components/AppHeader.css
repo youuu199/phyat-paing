@@ -83,7 +83,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .app-header {
     padding: var(--space-3) var(--space-4);
   }
@@ -96,6 +96,11 @@
 
   .app-header__inner h1 {
     font-size: var(--text-xl);
+  }
+
+  .app-header__user {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 /* ============================================================
@@ -180,7 +185,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .app-header {
     padding: var(--space-4) var(--space-4);
   }
