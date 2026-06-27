@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { CATEGORIES, CATEGORY_ICONS } from '../types';
 import type { Category, BudgetLimits } from '../types';
 import { useToast } from './Toast';
+import { useTranslation } from '../i18n/useTranslation';
+import type { Lang } from '../i18n/LanguageContext';
 import ExportButtons from './ExportButtons';
 
 const BUDGET_STORAGE_KEY = 'bill-organizer-budgets';
@@ -13,6 +15,7 @@ interface SettingsPageProps {
 
 export default function SettingsPage({ onBack }: SettingsPageProps) {
   const { toast } = useToast();
+  const { lang, setLang, t } = useTranslation();
   const [budgets, setBudgets] = useState<BudgetLimits>(() => {
     try {
       const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
@@ -49,7 +52,23 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
       </button>
 
       <div className="settings-page">
-        <h2>⚙️ Settings</h2>
+        <h2>⚙️ {t('settings.title')}</h2>
+
+        {/* Language */}
+        <section className="settings-page__section">
+          <h3>🌐 {t('settings.language')}</h3>
+          <div className="settings-page__field">
+            <label htmlFor="language">{t('settings.language')}</label>
+            <select
+              id="language"
+              value={lang}
+              onChange={(e) => setLang(e.target.value as Lang)}
+            >
+              <option value="en">English</option>
+              <option value="my">မြန်မာ (Myanmar)</option>
+            </select>
+          </div>
+        </section>
 
         {/* Currency */}
         <section className="settings-page__section">

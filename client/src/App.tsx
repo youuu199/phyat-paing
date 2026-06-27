@@ -2,12 +2,15 @@ import { useState, useCallback } from 'react';
 import { Menu, X, LayoutDashboard, BarChart3, User, Settings, LogOut, ReceiptText, Loader2 } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './components/AuthContext';
+import { LanguageProvider } from './i18n/LanguageContext';
+import { useTranslation } from './i18n/useTranslation';
 import AuthPage from './components/AuthPage';
 import BillDashboard from './components/BillDashboard';
 import AnalyticsPage from './components/AnalyticsPage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
 import ThemeToggle from './components/ThemeToggle';
+import LanguageToggle from './components/LanguageToggle';
 import MobileNav from './components/MobileNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
@@ -15,13 +18,14 @@ import './App.css';
 type Page = 'dashboard' | 'analytics' | 'profile' | 'settings';
 
 function Hamburger({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <button
       className="hamburger"
       onClick={onClick}
       aria-expanded={isOpen}
       aria-controls="mobile-nav"
-      aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+      aria-label={isOpen ? t('hamburger.close') : t('hamburger.open')}
     >
       {isOpen ? <X size={22} strokeWidth={1.5} /> : <Menu size={22} strokeWidth={1.5} />}
     </button>
@@ -30,6 +34,7 @@ function Hamburger({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }
 
 function AppContent() {
   const { token, user, loading, logout } = useAuth();
+  const { t } = useTranslation();
   const [page, setPage] = useState<Page>('dashboard');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -45,7 +50,7 @@ function AppContent() {
     return (
       <div className="auth-loading">
         <Loader2 className="auth-loading__spinner" size={32} strokeWidth={1.5} />
-        <p>Loading...</p>
+        <p>{t('app.loading')}</p>
       </div>
     );
   }
@@ -60,7 +65,7 @@ function AppContent() {
     <>
       {/* Skip link for keyboard users */}
       <a className="skip-link" href="#main-content">
-        Skip to main content
+        {t('app.skipLink')}
       </a>
 
       <header className="app-header">
@@ -68,9 +73,9 @@ function AppContent() {
           <div>
             <h1 className="app-title" style={{ cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
               <ReceiptText size={24} strokeWidth={1.75} className="app-title__icon" />
-              Smart Bill Organizer
+              {t('app.title')}
             </h1>
-            <p>Upload your bills and receipts — we'll extract the data automatically.</p>
+            <p>{t('app.tagline')}</p>
           </div>
           <div className="app-header__user">
             <nav className="app-header__nav" aria-label="Main navigation">
@@ -80,7 +85,7 @@ function AppContent() {
                 aria-current={page === 'dashboard' ? 'page' : undefined}
               >
                 <LayoutDashboard size={16} strokeWidth={1.75} />
-                Dashboard
+                {t('nav.dashboard')}
               </button>
               <button
                 className={`app-header__nav-btn${page === 'analytics' ? ' app-header__nav-btn--active' : ''}`}
@@ -88,7 +93,7 @@ function AppContent() {
                 aria-current={page === 'analytics' ? 'page' : undefined}
               >
                 <BarChart3 size={16} strokeWidth={1.75} />
-                Analytics
+                {t('nav.analytics')}
               </button>
               <button
                 className={`app-header__nav-btn${page === 'profile' ? ' app-header__nav-btn--active' : ''}`}
@@ -96,7 +101,7 @@ function AppContent() {
                 aria-current={page === 'profile' ? 'page' : undefined}
               >
                 <User size={16} strokeWidth={1.75} />
-                Profile
+                {t('nav.profile')}
               </button>
               <button
                 className={`app-header__nav-btn${page === 'settings' ? ' app-header__nav-btn--active' : ''}`}
@@ -104,17 +109,18 @@ function AppContent() {
                 aria-current={page === 'settings' ? 'page' : undefined}
               >
                 <Settings size={16} strokeWidth={1.75} />
-                Settings
+                {t('nav.settings')}
               </button>
             </nav>
             <ThemeToggle />
+            <LanguageToggle />
             <span className="app-header__email" title={user?.email}>
               <User size={14} strokeWidth={1.5} />
               {user?.email}
             </span>
             <button className="app-header__logout" onClick={logout}>
               <LogOut size={14} strokeWidth={1.5} />
-              Logout
+              {t('nav.logout')}
             </button>
           </div>
 
@@ -150,9 +156,11 @@ function AppContent() {
 function App() {
   return (
     <ToastProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </LanguageProvider>
     </ToastProvider>
   );
 }

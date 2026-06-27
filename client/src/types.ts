@@ -82,3 +82,12 @@ export const CATEGORY_ICONS: Record<Category, string> = {
   Shopping: '🛒',
   Other: '📌',
 };
+
+export const CATEGORY_LABELS: Record<Category, Record<'en' | 'my', string>> = {
+  Electricity: { en: 'Electricity', my: 'လျှပ်စစ်' },
+  Water:       { en: 'Water',       my: 'ရေ' },
+  Internet:    { en: 'Internet',    my: 'အင်တာနက်' },
+  Phone:       { en: 'Phone',       my: 'ဖုန်း' },
+  Shopping:    { en: 'Shopping',    my: 'ဈေးဝယ်' },
+  Other:       { en: 'Other',       my: 'အခြား' },
+};
