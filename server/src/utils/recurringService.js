@@ -9,7 +9,7 @@ async function processRecurringBills() {
   try {
     const now = new Date();
 
-    // Find all recurring unpaid bills with a due date in the past
+    // System-wide query — processes all users' recurring bills
     const recurringBills = await Bill.find({
       isRecurring: true,
       recurringInterval: { $exists: true, $ne: null },
