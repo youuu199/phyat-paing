@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from './Toast';
+import { useTranslation } from '../i18n/useTranslation';
+import { formatDate } from '../i18n/formatDate';
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -9,6 +11,7 @@ interface ProfilePageProps {
 export default function ProfilePage({ onBack }: ProfilePageProps) {
   const { user, apiFetch } = useAuth();
   const { toast } = useToast();
+  const { t, lang } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,17 +21,17 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      toast('New passwords do not match', 'error');
+      toast(t('profile.errorMismatch'), 'error');
       return;
     }
 
     if (newPassword.length < 8) {
-      toast('Password must be at least 8 characters', 'error');
+      toast(t('profile.errorLength'), 'error');
       return;
     }
 
     if (!/\d/.test(newPassword)) {
-      toast('Password must contain at least one number', 'error');
+      toast(t('profile.errorNumber'), 'error');
       return;
     }
 
@@ -42,15 +45,15 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to change password');
+        throw new Error(data.error || t('profile.changeFailed'));
       }
 
-      toast('Password changed successfully', 'success');
+      toast(t('profile.changed'), 'success');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Failed to change password', 'error');
+      toast(err instanceof Error ? err.message : t('profile.changeFailed'), 'error');
     } finally {
       setChanging(false);
     }
@@ -59,35 +62,31 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
   return (
     <div className="page-container">
       <button className="page-container__back" onClick={onBack}>
-        ← Back to Dashboard
+        ← {t('settings.back')}
       </button>
 
       <div className="profile-page">
-        <h2>👤 Profile</h2>
+        <h2>👤 {t('profile.title')}</h2>
 
         <div className="profile-page__info">
           <div className="profile-page__field">
-            <span className="profile-page__label">Email</span>
+            <span className="profile-page__label">{t('profile.email')}</span>
             <span className="profile-page__value">{user?.email}</span>
           </div>
           {user?.createdAt && (
             <div className="profile-page__field">
-              <span className="profile-page__label">Member since</span>
+              <span className="profile-page__label">{t('profile.memberSince')}</span>
               <span className="profile-page__value">
-                {new Date(user.createdAt).toLocaleDateString('en', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                {formatDate(user.createdAt, lang)}
               </span>
             </div>
           )}
         </div>
 
-        <h3>🔒 Change Password</h3>
+        <h3>🔒 {t('profile.changePassword')}</h3>
         <form className="profile-page__form" onSubmit={handleChangePassword}>
           <div className="profile-page__form-group">
-            <label htmlFor="current-password">Current Password</label>
+            <label htmlFor="current-password">{t('profile.currentPassword')}</label>
             <input
               id="current-password"
               type="password"
@@ -98,7 +97,7 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
             />
           </div>
           <div className="profile-page__form-group">
-            <label htmlFor="new-password">New Password</label>
+            <label htmlFor="new-password">{t('profile.newPassword')}</label>
             <input
               id="new-password"
               type="password"
@@ -110,7 +109,7 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
             />
           </div>
           <div className="profile-page__form-group">
-            <label htmlFor="confirm-password">Confirm New Password</label>
+            <label htmlFor="confirm-password">{t('profile.confirmNewPassword')}</label>
             <input
               id="confirm-password"
               type="password"
@@ -126,7 +125,7 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
             type="submit"
             disabled={changing}
           >
-            {changing ? 'Changing...' : 'Change Password'}
+            {changing ? t('profile.changing') : t('profile.changeBtn')}
           </button>
         </form>
       </div>

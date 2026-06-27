@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useAuth } from './AuthContext';
 import type { BillStats, Category, BudgetLimits } from '../types';
-import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
+import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LABELS } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
 
 const BUDGET_STORAGE_KEY = 'bill-organizer-budgets';
 
@@ -25,6 +26,7 @@ export default function SpendingOverview() {
   const [showBudgets, setShowBudgets] = useState(false);
   const [budgets, setBudgets] = useState<BudgetLimits>(loadBudgets);
   const { apiFetch } = useAuth();
+  const { t, lang } = useTranslation();
 
   const fetchStats = useCallback(async () => {
     try {
@@ -64,7 +66,7 @@ export default function SpendingOverview() {
     return (
       <div className="spending-overview">
         <div className="spending-overview__header">
-          <h3>📊 Spending Overview</h3>
+          <h3>📊 {t('spending.title')}</h3>
         </div>
         <div className="spending-overview__loading">
           <div className="skeleton" style={{ height: 200 }} />
@@ -80,9 +82,9 @@ export default function SpendingOverview() {
   return (
     <div className="spending-overview">
       <div className="spending-overview__header">
-        <h3>📊 Spending Overview</h3>
+        <h3>📊 {t('spending.title')}</h3>
         <span className="spending-overview__total">
-          {totalSpent.toLocaleString()} MMK total
+          {t('spending.total', { amount: totalSpent.toLocaleString() })}
         </span>
       </div>
 
@@ -126,11 +128,11 @@ export default function SpendingOverview() {
               <div key={s._id} className="spending-overview__item">
                 <div className="spending-overview__item-header">
                   <span className="spending-overview__item-icon">{CATEGORY_ICONS[cat] || '📌'}</span>
-                  <span className="spending-overview__item-name">{s._id}</span>
+                  <span className="spending-overview__item-name">{CATEGORY_LABELS[cat]?.[lang] || s._id}</span>
                   <span className="spending-overview__item-amount">
                     {s.total.toLocaleString()} MMK
                   </span>
-                  <span className="spending-overview__item-count">{s.count} bill{s.count !== 1 ? 's' : ''}</span>
+                  <span className="spending-overview__item-count">{t('spending.bills', { count: s.count, plural: s.count !== 1 ? 's' : '' })}</span>
                 </div>
                 {budget !== undefined && budget > 0 && pct !== null && (
                   <div className="budget-alert">
@@ -144,7 +146,7 @@ export default function SpendingOverview() {
                       />
                     </div>
                     <span className="budget-alert__label" style={{ color: barColor }}>
-                      {pct}% of {budget.toLocaleString()} MMK
+                      {t('spending.budgetOf', { pct, budget: budget.toLocaleString() })}
                     </span>
                   </div>
                 )}
@@ -160,16 +162,16 @@ export default function SpendingOverview() {
         onClick={() => setShowBudgets(!showBudgets)}
         aria-expanded={showBudgets}
       >
-        {showBudgets ? '✕ Close' : '⚙️ Set Budgets'}
+        {showBudgets ? `✕ ${t('spending.close')}` : `⚙️ ${t('spending.setBudgets')}`}
       </button>
 
       {showBudgets && (
         <div className="budget-settings">
-          <p className="budget-settings__hint">Set monthly spending limits per category</p>
+          <p className="budget-settings__hint">{t('spending.budgetHint')}</p>
           {CATEGORIES.map((cat) => (
             <div key={cat} className="budget-settings__row">
               <span className="budget-settings__icon">{CATEGORY_ICONS[cat]}</span>
-              <label className="budget-settings__label">{cat}</label>
+              <label className="budget-settings__label">{CATEGORY_LABELS[cat]?.[lang] || cat}</label>
               <input
                 className="budget-settings__input"
                 type="number"
@@ -177,7 +179,7 @@ export default function SpendingOverview() {
                 placeholder="0"
                 value={budgets[cat] ?? ''}
                 onChange={(e) => handleBudgetChange(cat, e.target.value)}
-                aria-label={`Budget for ${cat}`}
+                aria-label={t('spending.budgetOf', { pct: '', budget: '' })}
               />
               <span className="budget-settings__unit">MMK</span>
             </div>

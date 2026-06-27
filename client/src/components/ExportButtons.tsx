@@ -2,11 +2,13 @@ import { useCallback, useState } from 'react';
 import { FileDown, FileText } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useToast } from './Toast';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function ExportButtons() {
   const { apiFetch } = useAuth();
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
+  const { t } = useTranslation();
 
   const handleCSV = useCallback(async () => {
     setExporting(true);
@@ -23,13 +25,13 @@ export default function ExportButtons() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast('CSV exported successfully', 'success');
+      toast(t('export.csvSuccess'), 'success');
     } catch {
-      toast('Failed to export CSV', 'error');
+      toast(t('export.csvFailed'), 'error');
     } finally {
       setExporting(false);
     }
-  }, [apiFetch, toast]);
+  }, [apiFetch, toast, t]);
 
   const handlePDF = useCallback(async () => {
     setExporting(true);
@@ -41,7 +43,7 @@ export default function ExportButtons() {
       const bills = data.bills || data;
 
       if (!bills.length) {
-        toast('No bills to export', 'error');
+        toast(t('export.noBills'), 'error');
         setExporting(false);
         return;
       }
@@ -151,13 +153,13 @@ export default function ExportButtons() {
       }
 
       pdf.save('bills-export.pdf');
-      toast('PDF exported successfully', 'success');
+      toast(t('export.pdfSuccess'), 'success');
     } catch {
-      toast('Failed to export PDF', 'error');
+      toast(t('export.pdfFailed'), 'error');
     } finally {
       setExporting(false);
     }
-  }, [apiFetch, toast]);
+  }, [apiFetch, toast, t]);
 
   return (
     <div className="export-buttons">
@@ -165,19 +167,19 @@ export default function ExportButtons() {
         className="export-buttons__btn"
         onClick={handleCSV}
         disabled={exporting}
-        aria-label="Export bills as CSV"
+        aria-label={t('export.csv')}
       >
         <FileText size={14} strokeWidth={1.75} />
-        {exporting ? 'Exporting...' : 'Export CSV'}
+        {exporting ? t('export.exporting') : t('export.csv')}
       </button>
       <button
         className="export-buttons__btn"
         onClick={handlePDF}
         disabled={exporting}
-        aria-label="Export bills as PDF"
+        aria-label={t('export.pdf')}
       >
         <FileDown size={14} strokeWidth={1.75} />
-        {exporting ? 'Exporting...' : 'Export PDF'}
+        {exporting ? t('export.exporting') : t('export.pdf')}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface Props {
   children: ReactNode;
@@ -8,6 +9,45 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+}
+
+function ErrorFallback({ error, onReset }: { error: Error | null; onReset: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="error-boundary" role="alert">
+      <div className="error-boundary__content">
+        <span className="error-boundary__icon" aria-hidden="true">💥</span>
+        <h2 className="error-boundary__title">{t('error.somethingWentWrong')}</h2>
+        <p className="error-boundary__message">
+          {t('error.unexpected')}
+        </p>
+        {error && (
+          <details className="error-boundary__details" open>
+            <summary>{t('error.details')}</summary>
+            <pre className="error-boundary__stack">
+              {error.message}
+              {'\n\n'}
+              {error.stack}
+            </pre>
+          </details>
+        )}
+        <div className="error-boundary__actions">
+          <button
+            className="error-boundary__button"
+            onClick={onReset}
+          >
+            🔄 {t('error.tryAgain')}
+          </button>
+          <button
+            className="error-boundary__button error-boundary__button--secondary"
+            onClick={() => window.location.reload()}
+          >
+            ↻ {t('error.refresh')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -46,42 +86,8 @@ export default class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Default error UI
-      return (
-        <div className="error-boundary" role="alert">
-          <div className="error-boundary__content">
-            <span className="error-boundary__icon" aria-hidden="true">💥</span>
-            <h2 className="error-boundary__title">Something went wrong</h2>
-            <p className="error-boundary__message">
-              An unexpected error occurred. Please try refreshing the page.
-            </p>
-            {this.state.error && (
-              <details className="error-boundary__details" open>
-                <summary>Error details</summary>
-                <pre className="error-boundary__stack">
-                  {this.state.error.message}
-                  {'\n\n'}
-                  {this.state.error.stack}
-                </pre>
-              </details>
-            )}
-            <div className="error-boundary__actions">
-              <button
-                className="error-boundary__button"
-                onClick={this.handleReset}
-              >
-                🔄 Try Again
-              </button>
-              <button
-                className="error-boundary__button error-boundary__button--secondary"
-                onClick={() => window.location.reload()}
-              >
-                ↻ Refresh Page
-              </button>
-            </div>
-          </div>
-        </div>
-      );
+      // Default error UI with translations
+      return <ErrorFallback error={this.state.error} onReset={this.handleReset} />;
     }
 
     return this.props.children;

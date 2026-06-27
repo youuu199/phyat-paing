@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import type { Bill } from '../types';
 import { CATEGORY_ICONS } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
 
 export default function UpcomingBills() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const { apiFetch } = useAuth();
+  const { t } = useTranslation();
 
   const fetchUpcoming = useCallback(async () => {
     try {
@@ -36,8 +38,8 @@ export default function UpcomingBills() {
   return (
     <div className="upcoming-bills">
       <div className="upcoming-bills__header">
-        <h3>⏰ Due Soon</h3>
-        <span className="upcoming-bills__count">{bills.length} bill{bills.length !== 1 ? 's' : ''}</span>
+        <h3>⏰ {t('upcoming.title')}</h3>
+        <span className="upcoming-bills__count">{t('upcoming.bills', { count: bills.length, plural: bills.length !== 1 ? 's' : '' })}</span>
       </div>
       <div className="upcoming-bills__list">
         {bills.map((bill) => {
@@ -63,10 +65,10 @@ export default function UpcomingBills() {
               </div>
               <span className="upcoming-bills__days">
                 {isOverdue
-                  ? `${Math.abs(daysLeft)}d overdue`
+                  ? t('upcoming.overdue', { days: Math.abs(daysLeft) })
                   : isToday
-                  ? 'Today'
-                  : `${daysLeft}d left`}
+                  ? t('upcoming.today')
+                  : t('upcoming.daysLeft', { days: daysLeft })}
               </span>
             </div>
           );
