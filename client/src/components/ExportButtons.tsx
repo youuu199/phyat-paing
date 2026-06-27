@@ -69,7 +69,7 @@ export default function ExportButtons() {
       // Title
       pdf.setFontSize(16);
       pdf.setTextColor(30, 41, 59);
-      pdf.text('Bill Organizer — Export', 14, y);
+      pdf.text('Phyat Paing (ဖြတ်ပိုင်း) — Export', 14, y);
       y += 8;
 
       // Overall date

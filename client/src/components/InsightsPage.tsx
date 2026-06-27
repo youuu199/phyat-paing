@@ -3,10 +3,10 @@ import MonthlyTrendChart from './MonthlyTrendChart';
 import UpcomingBills from './UpcomingBills';
 import ErrorBoundary from './ErrorBoundary';
 
-export default function AnalyticsPage() {
+export default function InsightsPage() {
   return (
-    <div className="analytics-page">
-      <div className="analytics-page__grid">
+    <div className="insights-page">
+      <div className="insights-page__grid">
         <ErrorBoundary>
           <SpendingOverview />
         </ErrorBoundary>
@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
           <MonthlyTrendChart />
         </ErrorBoundary>
       </div>
-      <div className="analytics-page__upcoming">
+      <div className="insights-page__upcoming">
         <ErrorBoundary>
           <UpcomingBills />
         </ErrorBoundary>
