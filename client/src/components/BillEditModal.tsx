@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import type { Bill, Category } from '../types';
+import type { Bill, BillUpdate, Category } from '../types';
 import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
+import { useTranslation } from '../i18n/useTranslation';
+import './BillEditModal.css';
 
 interface BillEditModalProps {
   bill: Bill;
-  onSave: (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => Promise<void>;
+  onSave: (id: string, updates: BillUpdate) => Promise<void>;
   onClose: () => void;
 }
 
@@ -17,6 +19,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
   const [recurringInterval, setRecurringInterval] = useState<string>(bill.recurringInterval || 'monthly');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +27,12 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount < 0) {
-      setError('Please enter a valid amount');
+      setError(t('modal.errorAmount'));
       return;
     }
 
     if (!title.trim()) {
-      setError('Title is required');
+      setError(t('modal.errorTitle'));
       return;
     }
 
@@ -45,7 +48,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save changes');
+      setError(err instanceof Error ? err.message : t('modal.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -55,7 +58,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Edit bill">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">✏️ Edit Bill</h2>
+          <h2 className="modal-title">✏️ {t('modal.editBill')}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Close" title="Close">
             ✕
           </button>
@@ -63,7 +66,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
 
         <form className="modal-form" onSubmit={handleSubmit}>
           <div className="modal-form__field">
-            <label className="modal-form__label" htmlFor="edit-title">Title</label>
+            <label className="modal-form__label" htmlFor="edit-title">{t('modal.title')}</label>
             <input
               id="edit-title"
               className="modal-form__input"
@@ -76,7 +79,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
           </div>
 
           <div className="modal-form__field">
-            <label className="modal-form__label" htmlFor="edit-amount">Amount (MMK)</label>
+            <label className="modal-form__label" htmlFor="edit-amount">{t('modal.amount')}</label>
             <input
               id="edit-amount"
               className="modal-form__input"
@@ -90,7 +93,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
           </div>
 
           <div className="modal-form__field">
-            <label className="modal-form__label">Category</label>
+            <label className="modal-form__label">{t('modal.category')}</label>
             <div className="modal-form__categories">
               {CATEGORIES.map((cat) => (
                 <button
@@ -111,7 +114,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
           </div>
 
           <div className="modal-form__field">
-            <label className="modal-form__label" htmlFor="edit-due-date">Due Date (optional)</label>
+            <label className="modal-form__label" htmlFor="edit-due-date">{t('modal.dueDate')}</label>
             <input
               id="edit-due-date"
               className="modal-form__input"
@@ -130,11 +133,11 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
                 onChange={(e) => setIsRecurring(e.target.checked)}
                 disabled={saving}
               />
-              🔄 Recurring bill
+              🔄 {t('modal.recurring')}
             </label>
             {isRecurring && (
               <div className="modal-form__recurring-options">
-                {['monthly', 'quarterly', 'yearly'].map((interval) => (
+                {(['monthly', 'quarterly', 'yearly'] as const).map((interval) => (
                   <button
                     key={interval}
                     type="button"
@@ -142,7 +145,7 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
                     onClick={() => setRecurringInterval(interval)}
                     disabled={saving}
                   >
-                    {interval === 'monthly' ? '📅 Monthly' : interval === 'quarterly' ? '📆 Quarterly' : '🗓️ Yearly'}
+                    {interval === 'monthly' ? `📅 ${t('modal.monthly')}` : interval === 'quarterly' ? `📆 ${t('modal.quarterly')}` : `🗓️ ${t('modal.yearly')}`}
                   </button>
                 ))}
               </div>
@@ -160,14 +163,14 @@ export default function BillEditModal({ bill, onSave, onClose }: BillEditModalPr
               onClick={onClose}
               disabled={saving}
             >
-              Cancel
+              {t('modal.cancel')}
             </button>
             <button
               type="submit"
               className="modal-form__btn modal-form__btn--save"
               disabled={saving}
             >
-              {saving ? '⏳ Saving...' : '💾 Save Changes'}
+              {saving ? `⏳ ${t('modal.saving')}` : `💾 ${t('modal.save')}`}
             </button>
           </div>
         </form>

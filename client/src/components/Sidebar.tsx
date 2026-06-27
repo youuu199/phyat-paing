@@ -1,12 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
-
-interface MonthEntry {
-  year: number;
-  month: number;
-  label: string;
-  count: number;
-}
+import type { MonthEntry } from '../types';
+import { MONTH_ABBR } from '../types';
+import './Sidebar.css';
 
 interface SidebarProps {
   months: MonthEntry[];
@@ -16,11 +12,6 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const MONTH_ABBR = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
 
 export default function Sidebar({
   months,

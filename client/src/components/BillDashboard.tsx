@@ -6,7 +6,9 @@ import Sidebar from './Sidebar';
 import { useToast } from './Toast';
 import { useAuth } from './AuthContext';
 import { useTranslation } from '../i18n/useTranslation';
-import type { Bill, MonthEntry } from '../types';
+import type { Bill, BillUpdate, CategoryFilter, MonthEntry } from '../types';
+import './BillDashboard.css';
+import './Skeleton.css';
 
 const SKELETON_COUNT = 6;
 
@@ -28,7 +30,7 @@ function SkeletonCard() {
 
 export default function BillDashboard() {
   const [bills, setBills] = useState<Bill[]>([]);
-  const [category, setCategory] = useState('All');
+  const [category, setCategory] = useState<CategoryFilter>('All');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [availableMonths, setAvailableMonths] = useState<MonthEntry[]>([]);
@@ -118,7 +120,7 @@ export default function BillDashboard() {
     toast(t('bills.processed'), 'success');
   };
 
-  const handleUpdate = async (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => {
+  const handleUpdate = async (id: string, updates: BillUpdate) => {
     try {
       const res = await apiFetch(`/api/bills/${id}`, {
         method: 'PATCH',

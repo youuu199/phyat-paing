@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useTranslation } from '../i18n/useTranslation';
+import './BillUploader.css';
 
 interface BillUploaderProps {
   onUploadSuccess: () => void;
@@ -10,11 +11,11 @@ const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,imag
 
 type UploadStage = 'idle' | 'uploading' | 'processing' | 'classifying';
 
-const STAGE_MESSAGES: Record<UploadStage, string> = {
-  idle: 'Upload & Process',
-  uploading: '📤 Uploading image...',
-  processing: '🔍 Extracting text (OCR)...',
-  classifying: '🤖 Classifying with AI...',
+const STAGE_KEYS: Record<UploadStage, string> = {
+  idle: 'uploader.upload',
+  uploading: 'uploader.stageUploading',
+  processing: 'uploader.stageProcessing',
+  classifying: 'uploader.stageClassifying',
 };
 
 export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
@@ -156,7 +157,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
 
       {isUploading && (
         <p className="bill-uploader__stage">
-          {STAGE_MESSAGES[stage]}
+          {t(STAGE_KEYS[stage])}
         </p>
       )}
 
@@ -182,7 +183,7 @@ export default function BillUploader({ onUploadSuccess }: BillUploaderProps) {
           onClick={handleUpload}
           disabled={!file || isUploading}
         >
-          {isUploading ? STAGE_MESSAGES[stage] : `🚀 ${t('uploader.upload')}`}
+          {isUploading ? t(STAGE_KEYS[stage]) : `🚀 ${t('uploader.upload')}`}
         </button>
       </div>
 

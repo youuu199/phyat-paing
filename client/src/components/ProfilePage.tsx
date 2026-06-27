@@ -3,6 +3,8 @@ import { useAuth } from './AuthContext';
 import { useToast } from './Toast';
 import { useTranslation } from '../i18n/useTranslation';
 import { formatDate } from '../i18n/formatDate';
+import { validatePassword } from '../utils/validatePassword';
+import './SettingsPage.css';
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -25,13 +27,9 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast(t('profile.errorLength'), 'error');
-      return;
-    }
-
-    if (!/\d/.test(newPassword)) {
-      toast(t('profile.errorNumber'), 'error');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast(t(`profile.error${passwordError === 'length' ? 'Length' : 'Number'}`), 'error');
       return;
     }
 

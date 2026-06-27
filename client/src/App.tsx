@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Menu, X, LayoutDashboard, BarChart3, User, Settings, LogOut, ReceiptText, Loader2 } from 'lucide-react';
+import { Menu, X, LogOut, ReceiptText, Loader2, User } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import { LanguageProvider } from './i18n/LanguageContext';
@@ -13,9 +13,9 @@ import ThemeToggle from './components/ThemeToggle';
 import LanguageToggle from './components/LanguageToggle';
 import MobileNav from './components/MobileNav';
 import ErrorBoundary from './components/ErrorBoundary';
-import './App.css';
-
-type Page = 'dashboard' | 'analytics' | 'profile' | 'settings';
+import { NAV_ITEMS } from './navigation';
+import type { Page } from './types';
+import './components/AppHeader.css';
 
 function Hamburger({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
   const { t } = useTranslation();
@@ -79,38 +79,17 @@ function AppContent() {
           </div>
           <div className="app-header__user">
             <nav className="app-header__nav" aria-label="Main navigation">
-              <button
-                className={`app-header__nav-btn${page === 'dashboard' ? ' app-header__nav-btn--active' : ''}`}
-                onClick={() => setPage('dashboard')}
-                aria-current={page === 'dashboard' ? 'page' : undefined}
-              >
-                <LayoutDashboard size={16} strokeWidth={1.75} />
-                {t('nav.dashboard')}
-              </button>
-              <button
-                className={`app-header__nav-btn${page === 'analytics' ? ' app-header__nav-btn--active' : ''}`}
-                onClick={() => setPage('analytics')}
-                aria-current={page === 'analytics' ? 'page' : undefined}
-              >
-                <BarChart3 size={16} strokeWidth={1.75} />
-                {t('nav.analytics')}
-              </button>
-              <button
-                className={`app-header__nav-btn${page === 'profile' ? ' app-header__nav-btn--active' : ''}`}
-                onClick={() => setPage('profile')}
-                aria-current={page === 'profile' ? 'page' : undefined}
-              >
-                <User size={16} strokeWidth={1.75} />
-                {t('nav.profile')}
-              </button>
-              <button
-                className={`app-header__nav-btn${page === 'settings' ? ' app-header__nav-btn--active' : ''}`}
-                onClick={() => setPage('settings')}
-                aria-current={page === 'settings' ? 'page' : undefined}
-              >
-                <Settings size={16} strokeWidth={1.75} />
-                {t('nav.settings')}
-              </button>
+              {NAV_ITEMS.map(({ page: p, icon: Icon, labelKey }) => (
+                <button
+                  key={p}
+                  className={`app-header__nav-btn${page === p ? ' app-header__nav-btn--active' : ''}`}
+                  onClick={() => setPage(p)}
+                  aria-current={page === p ? 'page' : undefined}
+                >
+                  <Icon size={16} strokeWidth={1.75} />
+                  {t(labelKey)}
+                </button>
+              ))}
             </nav>
             <ThemeToggle />
             <LanguageToggle />

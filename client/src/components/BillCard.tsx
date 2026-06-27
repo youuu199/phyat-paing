@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Bill } from '../types';
+import type { Bill, BillUpdate } from '../types';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
 import BillEditModal from './BillEditModal';
 import PaymentToggle from './PaymentToggle';
 import RecurringBadge from './RecurringBadge';
 import { useTranslation } from '../i18n/useTranslation';
 import { formatDate } from '../i18n/formatDate';
+import './BillCard.css';
+import './ImageViewer.css';
 
 interface BillCardProps {
   bill: Bill;
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, updates: { title?: string; amount?: number; category?: string; dueDate?: string; isRecurring?: boolean; recurringInterval?: string }) => Promise<void>;
+  onUpdate: (id: string, updates: BillUpdate) => Promise<void>;
   onPaymentToggle?: (id: string) => Promise<void>;
 }
 

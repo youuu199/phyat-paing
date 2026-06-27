@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import type { Bill } from '../types';
 import { CATEGORY_ICONS } from '../types';
 import { useTranslation } from '../i18n/useTranslation';
+import './UpcomingBills.css';
 
 export default function UpcomingBills() {
   const [bills, setBills] = useState<Bill[]>([]);

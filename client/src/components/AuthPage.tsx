@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ReceiptText, Loader2, LogIn, UserPlus, AlertTriangle } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useTranslation } from '../i18n/useTranslation';
+import { validatePassword } from '../utils/validatePassword';
+import './AuthPage.css';
 
 export default function AuthPage() {
   const { login, register } = useAuth();
@@ -40,13 +42,9 @@ export default function AuthPage() {
       return;
     }
 
-    if (password.length < 8) {
-      setError(t('auth.errorPasswordLength'));
-      return;
-    }
-
-    if (!/\d/.test(password)) {
-      setError(t('auth.errorPasswordNumber'));
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(t(`auth.errorPassword${passwordError === 'length' ? 'Length' : 'Number'}`));
       return;
     }
 

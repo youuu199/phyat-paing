@@ -1,4 +1,5 @@
 import { useState, useCallback, createContext, useContext } from 'react';
+import './Toast.css';
 
 interface ToastItem {
   id: number;

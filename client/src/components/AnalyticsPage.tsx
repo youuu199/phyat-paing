@@ -2,6 +2,7 @@ import SpendingOverview from './SpendingOverview';
 import MonthlyTrendChart from './MonthlyTrendChart';
 import UpcomingBills from './UpcomingBills';
 import ErrorBoundary from './ErrorBoundary';
+import './AnalyticsPage.css';
 
 export default function AnalyticsPage() {
   return (

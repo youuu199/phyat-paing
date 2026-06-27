@@ -1,0 +1,303 @@
+/* ---- Uploader ---- */
+.bill-uploader {
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) var(--space-6);
+  margin-bottom: var(--space-8);
+  text-align: center;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.bill-uploader:hover {
+  border-color: var(--color-accent-border);
+}
+
+.bill-uploader--dragover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+  transform: scale(1.01);
+}
+
+.bill-uploader--has-file {
+  border-style: solid;
+  border-color: var(--color-success);
+  background: var(--color-success-light);
+}
+
+.bill-uploader__icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-3);
+  display: block;
+}
+
+.bill-uploader h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xl);
+}
+
+.bill-uploader__hint {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+.bill-uploader__stage {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-base);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.bill-uploader__drop-hint {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-3);
+}
+
+.bill-uploader__controls {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bill-uploader__file-input {
+  display: none;
+}
+
+.bill-uploader__file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.bill-uploader__file-label:hover {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-light);
+}
+
+.bill-uploader__file-label:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.bill-uploader__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.bill-uploader__button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.bill-uploader__button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.bill-uploader__button:disabled {
+  opacity: 0.5;
+}
+
+.bill-uploader__button--uploading {
+  background: var(--color-text-muted);
+}
+
+.bill-uploader__selected {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.bill-uploader__selected-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--color-success-light);
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+}
+
+.bill-uploader__error {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: var(--space-4) var(--space-4);
+  }
+
+  .app-header h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .app-header p {
+    font-size: var(--text-sm);
+  }
+
+  .dashboard {
+    padding: var(--space-4);
+  }
+
+  .dashboard__grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .category-tabs {
+    gap: var(--space-1);
+  }
+
+  .category-tabs__tab {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-3);
+  }
+
+  .bill-uploader {
+    padding: var(--space-5) var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+
+  .bill-uploader h2 {
+    font-size: var(--text-lg);
+  }
+
+  .bill-uploader__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bill-uploader__file-label,
+  .bill-uploader__button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bill-card__image-wrap {
+    height: 180px;
+  }
+
+  /* Mobile sidebar: slide-over drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(300px, 85vw);
+    z-index: 200;
+    max-height: none;
+    border-left: 1px solid var(--color-border);
+    border-bottom: none;
+    box-shadow: var(--shadow-xl);
+    transform: translateX(100%);
+    transition: transform var(--transition-smooth);
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .sidebar__close {
+    display: block;
+  }
+
+  .sidebar__overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 199;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-smooth);
+  }
+
+  .sidebar__overlay--visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Mobile sidebar toggle button */
+  .sidebar-toggle {
+    display: none;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .sidebar-toggle:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-accent-border);
+  }
+}

@@ -1,8 +1,10 @@
 import { useRef, useEffect } from 'react';
-import { X, ReceiptText, LayoutDashboard, BarChart3, User, Settings, LogOut } from 'lucide-react';
+import { X, ReceiptText, User, LogOut } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
-
-type Page = 'dashboard' | 'analytics' | 'profile' | 'settings';
+import { useTranslation } from '../i18n/useTranslation';
+import { NAV_ITEMS } from '../navigation';
+import type { Page } from '../types';
+import './MobileNav.css';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface MobileNavProps {
 
 export default function MobileNav({ isOpen, page, userEmail, onNavigate, onClose, onLogout }: MobileNavProps) {
   const navRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // Close on Escape
   useEffect(() => {
@@ -63,7 +66,7 @@ export default function MobileNav({ isOpen, page, userEmail, onNavigate, onClose
       <div className="mobile-nav__header">
         <span className="mobile-nav__brand">
           <ReceiptText size={20} strokeWidth={1.75} className="mobile-nav__brand-icon" />
-          Smart Bill
+          {t('app.brand')}
         </span>
         <button
           className="mobile-nav__close"
@@ -76,38 +79,17 @@ export default function MobileNav({ isOpen, page, userEmail, onNavigate, onClose
 
       {/* Nav items */}
       <nav className="mobile-nav__list" aria-label="Main navigation">
-        <button
-          className={`mobile-nav__item${page === 'dashboard' ? ' mobile-nav__item--active' : ''}`}
-          onClick={() => nav('dashboard')}
-          aria-current={page === 'dashboard' ? 'page' : undefined}
-        >
-          <LayoutDashboard size={18} strokeWidth={1.75} />
-          Dashboard
-        </button>
-        <button
-          className={`mobile-nav__item${page === 'analytics' ? ' mobile-nav__item--active' : ''}`}
-          onClick={() => nav('analytics')}
-          aria-current={page === 'analytics' ? 'page' : undefined}
-        >
-          <BarChart3 size={18} strokeWidth={1.75} />
-          Analytics
-        </button>
-        <button
-          className={`mobile-nav__item${page === 'profile' ? ' mobile-nav__item--active' : ''}`}
-          onClick={() => nav('profile')}
-          aria-current={page === 'profile' ? 'page' : undefined}
-        >
-          <User size={18} strokeWidth={1.75} />
-          Profile
-        </button>
-        <button
-          className={`mobile-nav__item${page === 'settings' ? ' mobile-nav__item--active' : ''}`}
-          onClick={() => nav('settings')}
-          aria-current={page === 'settings' ? 'page' : undefined}
-        >
-          <Settings size={18} strokeWidth={1.75} />
-          Settings
-        </button>
+        {NAV_ITEMS.map(({ page: p, icon: Icon, labelKey }) => (
+          <button
+            key={p}
+            className={`mobile-nav__item${page === p ? ' mobile-nav__item--active' : ''}`}
+            onClick={() => nav(p)}
+            aria-current={page === p ? 'page' : undefined}
+          >
+            <Icon size={18} strokeWidth={1.75} />
+            {t(labelKey)}
+          </button>
+        ))}
       </nav>
 
       {/* Footer */}
@@ -121,7 +103,7 @@ export default function MobileNav({ isOpen, page, userEmail, onNavigate, onClose
         )}
         <button className="mobile-nav__logout" onClick={onLogout}>
           <LogOut size={16} strokeWidth={1.5} />
-          Logout
+          {t('nav.logout')}
         </button>
       </div>
       </div>
