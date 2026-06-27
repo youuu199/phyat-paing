@@ -93,7 +93,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 05-01-PLAN.md — Split App.css into per-component files, replace inline styles, add dark mode tokens, add Bill indexes
+- [x] 05-01-PLAN.md — Split App.css into per-component files, replace inline styles, add dark mode tokens, add Bill indexes
 
 ## Progress
 
@@ -106,4 +106,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Language Toggle & Integration | 0/1 | Not started | - |
 | 3. Core Component Translation | 0/1 | Not started | - |
 | 4. Analytics, Settings & Polish | 0/1 | Not started | - |
-| 5. CSS Refactoring & Code Cleanup | 0/1 | Not started | - |
+| 5. CSS Refactoring & Code Cleanup | 1/1 | Complete | 2026-06-27 |
