@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "project": "Smart Bill Organizer",
+  "milestone": {
+    "version": "1.0",
+    "name": "Language Switching"
+  },
+  "workflow": {
+    "text_mode": false,
+    "research": false
+  }
+}
