@@ -16,6 +16,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { NAV_ITEMS } from './navigation';
 import type { Page } from './types';
 import './components/AppHeader.css';
+import './components/MobileNav.css';
 
 function Hamburger({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
   const { t } = useTranslation();
