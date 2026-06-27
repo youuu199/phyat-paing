@@ -29,10 +29,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `LanguageProvider` component provides `t()` function that returns correct string for current language
   4. `useTranslation()` hook returns `{ t, lang, setLang }` and throws if used outside provider
   5. `formatDate()` helper produces locale-aware dates (en-US for English, my-MM for Burmese) with Arabic numerals
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 01-01: Create translation JSON files and i18n infrastructure
+- [ ] 01-01-PLAN.md — Create Burmese translations and i18n infrastructure (LanguageContext, useTranslation, formatDate)
 
 ### Phase 2: Language Toggle & Integration
 **Goal**: User can toggle between English and Burmese from the UI, preference persists across sessions
