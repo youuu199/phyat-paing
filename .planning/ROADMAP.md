@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: Language Toggle & Integration** - Add language toggle UI and wire it into the app
 - [ ] **Phase 3: Core Component Translation** - Translate auth, dashboard, bill management, and category components
 - [ ] **Phase 4: Analytics, Settings & Polish** - Translate analytics, profile, export, and remaining components
+- [ ] **Phase 5: CSS Refactoring & Code Cleanup** - Split monolithic CSS, replace inline styles, add indexes, clean up security issues
 
 ## Phase Details
 
@@ -79,6 +80,21 @@ Plans:
 Plans:
 - [ ] 04-01: Translate analytics, upcoming bills, export, profile, badges, error boundary, and date formatting
 
+### Phase 5: CSS Refactoring & Code Cleanup
+**Goal**: Maintainable CSS architecture and clean codebase — split 2775-line monolithic CSS, eliminate inline styles, add performance indexes, fix security issues
+**Depends on**: Phase 4
+**Requirements**: CLEANUP-01, CLEANUP-02, CLEANUP-03, CLEANUP-04, CLEANUP-05
+**Success Criteria** (what must be TRUE):
+  1. App.css split into per-component CSS files (auth.css, dashboard.css, bill-card.css, uploader.css, sidebar.css, analytics.css, modals.css, components.css, pages.css, mobile-nav.css)
+  2. All inline styles in TSX files replaced with CSS classes
+  3. Compound indexes added to Bill model ({userId, createdAt}, {userId, category})
+  4. recurringService.js scoped to query only bills for the current user
+  5. No hardcoded colors in dark mode — all use data-theme selector and CSS variables
+**Plans:** 1 plan
+
+Plans:
+- [ ] 05-01-PLAN.md — Split App.css into per-component files, replace inline styles, add dark mode tokens, add Bill indexes
+
 ## Progress
 
 **Execution Order:**
@@ -90,3 +106,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Language Toggle & Integration | 0/1 | Not started | - |
 | 3. Core Component Translation | 0/1 | Not started | - |
 | 4. Analytics, Settings & Polish | 0/1 | Not started | - |
+| 5. CSS Refactoring & Code Cleanup | 0/1 | Not started | - |
