@@ -5,9 +5,10 @@ import UpcomingBills from './UpcomingBills';
 import ErrorBoundary from './ErrorBoundary';
 import { useAuth } from './AuthContext';
 import { NoAnalyticsState } from './EmptyState';
+import type { Page } from '../utils/nav';
 
 interface InsightsPageProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: Page) => void;
 }
 
 export default function InsightsPage({ onNavigate }: InsightsPageProps) {
