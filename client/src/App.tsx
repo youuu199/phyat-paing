@@ -118,7 +118,7 @@ function AppContent() {
       <main id="main-content" tabIndex={-1}>
         <ErrorBoundary>
           {page === 'dashboard' && <BillDashboard />}
-          {page === 'insights' && <InsightsPage />}
+          {page === 'insights' && <InsightsPage onNavigate={navigateTo} />}
           {page === 'profile' && <ProfilePage onBack={() => setPage('dashboard')} />}
           {page === 'settings' && <SettingsPage onBack={() => setPage('dashboard')} />}
         </ErrorBoundary>

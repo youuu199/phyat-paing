@@ -5,6 +5,7 @@ import BillUploader from './BillUploader';
 import Sidebar from './Sidebar';
 import { useToast } from './Toast';
 import { useAuth } from './AuthContext';
+import { NoBillsState, NoSearchResults } from './EmptyState';
 import type { Bill, MonthEntry } from '../types';
 
 const SKELETON_COUNT = 6;
@@ -39,6 +40,8 @@ export default function BillDashboard() {
   const { toast } = useToast();
   const { apiFetch } = useAuth();
   const initialLoadDone = useRef(false);
+
+  const clearSearch = () => setSearchQuery('');
 
   const fetchBills = useCallback(async () => {
     try {
@@ -168,6 +171,10 @@ export default function BillDashboard() {
     fetchBills();
   };
 
+  const scrollToUpload = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Client-side search filtering
   const filteredBills = searchQuery.trim()
     ? bills.filter((bill) =>
@@ -270,20 +277,14 @@ export default function BillDashboard() {
           </div>
         )}
 
-        {/* Empty state */}
-        {!loading && !error && filteredBills.length === 0 && (
-          <div className="dashboard__empty">
-            <span className="dashboard__empty-icon" aria-hidden="true">
-              📭
-            </span>
-            <p className="dashboard__empty-text">
-              {searchQuery
-                ? `No bills matching "${searchQuery}"`
-                : `No bills found${category !== 'All' ? ` in "${category}"` : ''}${categoryLabel ? ` for ${categoryLabel}` : ''}.`
-              }
-              {!searchQuery && ' Upload your first bill above!'}
-            </p>
-          </div>
+        {/* No bills at all */}
+        {!loading && !error && bills.length === 0 && !searchQuery && (
+          <NoBillsState onUpload={scrollToUpload} />
+        )}
+
+        {/* No search results */}
+        {!loading && !error && bills.length > 0 && filteredBills.length === 0 && searchQuery && (
+          <NoSearchResults query={searchQuery} onClear={clearSearch} />
         )}
 
         {/* Bill grid */}
