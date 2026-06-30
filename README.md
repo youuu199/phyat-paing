@@ -1,4 +1,4 @@
-# 🧾 phyat-paing — Smart Bill Organizer
+# 🧾 Phyat Paing (ဖြတ်ပိုင်း) — Smart Bill Organizer
 
 ## 📖 Description
 
