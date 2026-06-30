@@ -61,6 +61,8 @@ export interface User {
   createdAt: string;
 }
 
+export type Page = 'dashboard' | 'analytics' | 'profile' | 'settings';
+
 export type Category = 'Electricity' | 'Water' | 'Internet' | 'Phone' | 'Shopping' | 'Other';
 
 export const CATEGORIES: Category[] = ['Electricity', 'Water', 'Internet', 'Phone', 'Shopping', 'Other'];
