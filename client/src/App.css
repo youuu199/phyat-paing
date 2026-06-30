@@ -1134,6 +1134,92 @@
   line-height: var(--leading-relaxed);
 }
 
+/* ---- Empty States ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-16) var(--space-6);
+  max-width: 420px;
+  margin: var(--space-8) auto;
+}
+
+.empty-state__icon-wrapper {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: var(--space-6);
+  background: var(--color-bg-secondary, #f1f5f9);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.empty-state__icon {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.empty-state__title {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 600;
+  color: var(--color-text, #1e293b);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.empty-state__description {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-muted, #64748b);
+  line-height: 1.6;
+  margin: 0 0 var(--space-6) 0;
+  max-width: 320px;
+}
+
+.empty-state__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary, #6366f1);
+  border: none;
+  border-radius: var(--radius-lg, 8px);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.empty-state__action:hover {
+  background: var(--color-primary-hover, #4f46e5);
+  transform: translateY(-1px);
+}
+
+.empty-state__action:active {
+  transform: translateY(0);
+}
+
+/* Search variant — subtle blue tint */
+.empty-state--search .empty-state__icon-wrapper {
+  background: var(--color-primary-light, #eef2ff);
+}
+
+/* Error variant — subtle red tint */
+.empty-state--error .empty-state__icon-wrapper {
+  background: var(--color-danger-light, #fef2f2);
+}
+
+.empty-state--error .empty-state__action {
+  background: var(--color-danger, #ef4444);
+}
+
+.empty-state--error .empty-state__action:hover {
+  background: var(--color-danger-hover, #dc2626);
+}
+
 /* ---- Toast Notifications ---- */
 .toast-container {
   position: fixed;
