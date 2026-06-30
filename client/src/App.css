@@ -1012,6 +1012,11 @@
   height: 200px;
 }
 
+.bill-card__image-skeleton {
+  width: 100%;
+  height: 200px;
+}
+
 .skeleton-card__body {
   padding: var(--space-4);
   display: flex;

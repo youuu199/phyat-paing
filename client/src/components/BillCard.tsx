@@ -14,6 +14,7 @@ interface BillCardProps {
 
 export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: BillCardProps) {
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [viewing, setViewing] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -66,28 +67,40 @@ export default function BillCard({ bill, onDelete, onUpdate, onPaymentToggle }: 
     <>
       <article className="bill-card" aria-label={`Bill: ${bill.title}`}>
       <div className="bill-card__image-wrap">
-        {imgError ? (
+        {/* Loading: shimmer skeleton */}
+        {!imgLoaded && !imgError && (
+          <div className="skeleton bill-card__image-skeleton" aria-label="Loading image" />
+        )}
+
+        {/* Image (renders for preload, hidden via opacity until onLoad) */}
+        <img
+          className={`bill-card__image${imgLoaded ? ' bill-card__image--visible' : ''}`}
+          src={bill.imageUrl}
+          alt={`Scanned image of ${bill.title}`}
+          loading="lazy"
+          onLoad={() => setImgLoaded(true)}
+          onError={() => {
+            setImgError(true);
+            setImgLoaded(true);
+          }}
+          onClick={() => setViewing(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setViewing(true);
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          title="Click to view full image"
+          style={{ opacity: imgLoaded && !imgError ? 1 : 0, transition: 'opacity 200ms ease-in' }}
+        />
+
+        {/* Error: fallback */}
+        {imgError && (
           <div className="bill-card__image-fallback" aria-hidden="true">
             🧾
           </div>
-        ) : (
-          <img
-            className="bill-card__image"
-            src={bill.imageUrl}
-            alt={`Scanned image of ${bill.title}`}
-            loading="lazy"
-            onError={() => setImgError(true)}
-            onClick={() => setViewing(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setViewing(true);
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            title="Click to view full image"
-          />
         )}
       </div>
 
