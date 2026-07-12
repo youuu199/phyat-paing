@@ -3,6 +3,7 @@ import Bill from '../models/Bill.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryStorage.js';
 import { extractTextFromImage } from '../utils/ocrService.js';
 import { classifyBillData } from '../utils/cohereService.js';
+import { convertToMMK } from '../utils/currencyConversion.js';
 
 /**
  * POST /api/bills
@@ -38,8 +39,14 @@ export const createBill = async (req, res, next) => {
 
     // --- Stage 4: AI classification via Cohere ---
     console.log('[pipeline] Classifying with Cohere...');
-    const { title, amount, category } = await classifyBillData(rawText);
-    console.log(`[pipeline] ✓ Cohere OK — "${title}" | ${amount} MMK | ${category}`);
+    const { title, amount, category, currency } = await classifyBillData(rawText);
+    console.log(`[pipeline] ✓ Cohere OK — "${title}" | ${amount} ${currency || 'MMK'} | ${category}`);
+
+    // --- Stage 4.25: Convert to MMK if bill is in foreign currency ---
+    const amountInMMK = await convertToMMK(amount, currency || 'MMK');
+    if (currency && currency !== 'MMK') {
+      console.log(`[pipeline] Converting ${amount} ${currency} → ${amountInMMK} MMK`);
+    }
 
     // --- Stage 4.5: Validate extracted data ---
     if (!amount || amount <= 0 || title === 'Unknown Bill') {
@@ -58,15 +65,17 @@ export const createBill = async (req, res, next) => {
       return res.status(422).json({
         error: reason,
         code: 'UNRECOGNIZED_BILL',
-        detail: { title, amount, category },
+        detail: { title, amount, currency, category },
       });
     }
 
-    // --- Stage 5: Save to MongoDB (scoped to user) ---
+    // --- Stage 5: Save to MongoDB (scoped to user, amount stored in MMK) ---
     const bill = await Bill.create({
       userId: req.userId,
       title,
-      amount,
+      amount: amountInMMK,
+      originalCurrency: currency || 'MMK',
+      originalAmount: amount,
       category,
       imageUrl: uploadResult.url,
       cloudinaryPublicId: uploadResult.publicId,
@@ -322,8 +331,8 @@ export const setRecurring = async (req, res, next) => {
 /**
  * PATCH /api/bills/:id
  *
- * Updates a bill's title, amount, and/or category — ONLY if it belongs to the authenticated user.
- * Does NOT allow changing the image (that requires re-upload).
+ * Updates a bill's title, amount, category, and/or image — ONLY if it belongs to the authenticated user.
+ * If a new image is uploaded, the old Cloudinary image is deleted and replaced.
  */
 export const updateBill = async (req, res, next) => {
   try {
@@ -350,27 +359,42 @@ export const updateBill = async (req, res, next) => {
       });
     }
 
-    const updates = {};
-    if (title !== undefined) updates.title = title;
-    if (amount !== undefined) updates.amount = amount;
-    if (category !== undefined) updates.category = category;
-    if (dueDate !== undefined) updates.dueDate = dueDate ? new Date(dueDate) : null;
-    if (isRecurring !== undefined) updates.isRecurring = isRecurring;
-    if (recurringInterval !== undefined) updates.recurringInterval = recurringInterval;
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-
-    const bill = await Bill.findOneAndUpdate(
-      { _id: req.params.id, userId: req.userId },
-      { $set: updates },
-      { returnDocument: 'after' }
-    );
-
+    const bill = await Bill.findOne({ _id: req.params.id, userId: req.userId });
     if (!bill) {
       return res.status(404).json({ error: 'Bill not found' });
     }
+
+    // Handle image replacement if a new file was uploaded
+    if (req.file) {
+      // Upload new image to Cloudinary
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+
+      // Delete old image from Cloudinary
+      if (bill.cloudinaryPublicId) {
+        try {
+          await deleteFromCloudinary(bill.cloudinaryPublicId);
+        } catch (cloudErr) {
+          console.warn(`[update] ⚠ Could not delete old Cloudinary image: ${cloudErr.message}`);
+        }
+      }
+
+      bill.imageUrl = uploadResult.url;
+      bill.cloudinaryPublicId = uploadResult.publicId;
+    }
+
+    // Apply text field updates
+    if (title !== undefined) bill.title = title;
+    if (amount !== undefined) bill.amount = amount;
+    if (category !== undefined) bill.category = category;
+    if (dueDate !== undefined) bill.dueDate = dueDate ? new Date(dueDate) : null;
+    if (isRecurring !== undefined) bill.isRecurring = isRecurring;
+    if (recurringInterval !== undefined) bill.recurringInterval = recurringInterval;
+
+    await bill.save();
 
     res.json(bill);
   } catch (err) {

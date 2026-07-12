@@ -7,6 +7,7 @@ import logger from './utils/logger.js';
 import uploadRoutes from './routes/upload.js';
 import billRoutes from './routes/billRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
@@ -59,11 +60,13 @@ app.get('/api/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bills', billRoutes);
+app.use('/api/v1/users', userRoutes);
 
 // Legacy routes (backward compatibility — redirects to v1)
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/bills', billRoutes);
+app.use('/api/users', userRoutes);
 
 // --------------- Error handler ---------------
 app.use((err, req, res, next) => {

@@ -1,4 +1,5 @@
-import { useState, useCallback, createContext, useContext } from 'react';
+import { useState, useCallback, createContext, useContext, useEffect } from 'react';
+import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
 interface ToastItem {
   id: number;
@@ -20,48 +21,65 @@ export function useToast() {
 
 let nextId = 0;
 
+function ToastItemComponent({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+
+  const icons = {
+    success: <CheckCircle className="w-5 h-5 text-success" />,
+    error: <XCircle className="w-5 h-5 text-danger" />,
+    info: <Info className="w-5 h-5 text-primary" />,
+  };
+
+  const bgColors = {
+    success: 'bg-emerald-50 border-emerald-200',
+    error: 'bg-red-50 border-red-200',
+    info: 'bg-indigo-50 border-indigo-200',
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg min-w-[300px] max-w-[400px] animate-slide-in ${bgColors[toast.type]}`}
+    >
+      {icons[toast.type]}
+      <span className="text-sm font-medium text-text-primary flex-1">
+        {toast.message}
+      </span>
+      <button
+        onClick={onDismiss}
+        className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors"
+      >
+        <X className="w-3.5 h-3.5 text-text-muted" />
+      </button>
+    </div>
+  );
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((message: string, type: ToastItem['type'] = 'info') => {
     const id = nextId++;
     setToasts((prev) => [...prev, { id, message, type }]);
-
-    // Auto-dismiss after 4s
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
   }, []);
 
   const dismiss = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const icons: Record<string, string> = {
-    success: '✅',
-    error: '❌',
-    info: 'ℹ️',
-  };
-
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
 
-      <div className="toast-container" role="status" aria-live="polite" aria-label="Notifications">
+      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast--${t.type}`}>
-            <span className="toast__icon" aria-hidden="true">
-              {icons[t.type]}
-            </span>
-            <span className="toast__message">{t.message}</span>
-            <button
-              className="toast__close"
-              onClick={() => dismiss(t.id)}
-              aria-label={`Dismiss: ${t.message}`}
-            >
-              ✕
-            </button>
-          </div>
+          <ToastItemComponent
+            key={t.id}
+            toast={t}
+            onDismiss={() => dismiss(t.id)}
+          />
         ))}
       </div>
     </ToastContext.Provider>

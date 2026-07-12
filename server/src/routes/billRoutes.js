@@ -48,7 +48,7 @@ router.get('/upcoming', getUpcomingBills);
 router.get('/export', exportBills);
 router.patch('/:id/payment', togglePayment);
 router.post('/:id/recurring', setRecurring);
-router.patch('/:id', updateBill);
+router.patch('/:id', upload.single('image'), updateBill);
 router.delete('/:id', deleteBill);
 
 export default router;

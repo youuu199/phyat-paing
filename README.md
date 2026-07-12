@@ -1,10 +1,10 @@
-# 🧾 Phyat Paing (ဖြတ်ပိုင်း) — Smart Bill Organizer
+# 🧾 Pyat Paing (ဖြတ်ပိုင်း) — AI-Powered Bill Organizer
 
 ## 📖 Description
 
-Phyat Paing (ဖြတ်ပိုင်း) is a full-stack MERN web app for managing utility bills. Upload a photo of any bill — electricity, water, internet, phone, or shopping receipt — and the app automatically extracts the data using OCR and AI, then displays it on a filterable dashboard with spending analytics.
+Pyat Paing (ဖြတ်ပိုင်း) is a full-stack MERN web app for managing utility bills. Upload a photo of any bill — electricity, water, internet, phone, or shopping receipt — and the app automatically extracts the data using OCR and AI, converts currencies in real-time, and displays everything on a filterable dashboard with spending analytics.
 
-**Built for Myanmar** — handles YESB electricity bills, YCDC water bills, MPT/Ooredoo phone bills, and more. OCR supports both Myanmar (Burmese) and English text, offline via Tesseract.js.
+**Built for Myanmar** — handles YESB electricity bills, YCDC water bills, MPT/Ooredoo phone bills, and more. OCR supports both Myanmar (Burmese) and English text, offline via Tesseract.js. Bills in any currency (USD, EUR, GBP, JPY, THB) are auto-detected and converted to MMK for storage, then displayed in your preferred currency using live exchange rates.
 
 ## ❓ The Problem
 
@@ -38,26 +38,18 @@ No API keys needed for OCR (runs offline). No subscription fees. Just upload and
 
 ## 📸 Screenshots
 
-### Auth
+| Page | Preview |
+|------|---------|
+| **Login** | ![Login](slides/screenshots/01-login.png) |
+| **Dashboard** | ![Dashboard](slides/screenshots/02-dashboard.png) |
+| **Bills** | ![Bills](slides/screenshots/03-bills.png) |
+| **Upload** | ![Upload](slides/screenshots/04-upload.png) |
+| **Analytics** | ![Analytics](slides/screenshots/05-analytics.png) |
+| **Calendar** | ![Calendar](slides/screenshots/06-calendar.png) |
+| **Settings** | ![Settings](slides/screenshots/07-settings.png) |
+| **Profile** | ![Profile](slides/screenshots/08-profile.png) |
 
-| Desktop | Mobile |
-|---------|--------|
-| ![Login](docs/images/auth.png) | ![Login Mobile](docs/images/auth-mobile.png) |
-| Login & register with JWT httpOnly cookies | Mobile-responsive auth page |
-
-### Dashboard
-
-| Desktop | Mobile |
-|---------|--------|
-| ![Dashboard](docs/images/dashboard.png) | ![Dashboard Mobile](docs/images/dashboard-mobile.png) |
-| Filterable bill grid with category tabs, search, and date sidebar | Mobile dashboard with hamburger menu |
-
-### Upload & Analytics
-
-| Upload | Analytics |
-|--------|-----------|
-| ![Upload](docs/images/upload.png) | ![Analytics](docs/images/analytics.png) |
-| Drag-and-drop upload with OCR progress stages | Spending breakdown donut chart and monthly trend line |
+> Presentation slides available at `slides/presentation.md` (Marp format)
 
 ## How It Works
 
@@ -77,39 +69,45 @@ No API keys needed for OCR (runs offline). No subscription fees. Just upload and
 
 ### Core
 - 🔐 **User auth** — Register / login with JWT, httpOnly cookies, per-user bill isolation
-- 📤 **Upload bills** — JPEG, PNG, WebP, GIF, BMP, TIFF images (10MB max)
+- 📤 **Upload bills** — JPEG, PNG, WebP images (10MB max), background uploads continue when navigating away
 - 👁️ **OCR** — Extracts text from Myanmar (Burmese) and English bills, offline via Tesseract.js
-- 🤖 **AI classification** — Auto-detects category (Electricity, Water, Internet, Phone, Shopping, Other)
+- 🤖 **AI classification** — Auto-detects category (Electricity, Water, Internet, Phone, Shopping, Other) + currency
+- 💱 **Real-time currency** — Auto-detects bill currency (USD, EUR, GBP, JPY, THB, MMK), converts to MMK for storage, displays in user's selected currency with live rates from open.er-api.com
 - 🛡️ **Validation** — Rejects unrecognized bills (no amount / unknown title) with descriptive alerts
 - ⚡ **Concurrent uploads** — Worker pool handles multiple OCR jobs in parallel
-- 📊 **Dashboard** — Responsive grid of bill cards with thumbnails
-- 🔍 **Search & filter** — By title, category (7 tabs), and month/year sidebar
-- ✏️ **Edit bills** — Correct AI-extracted title, amount, category, due date, and recurring settings
+- 📊 **Dashboard** — Overview with total bills, spending, unpaid count, upcoming bills, category breakdown
+- 🔍 **Search & filter** — By title, category (7 tabs), and month navigation
+- ✏️ **Edit bills** — Update title, amount, category, due date, recurring settings, and replace bill image
 - 🗑️ **Delete** — Removes bill from MongoDB and Cloudinary (with confirmation)
-- 📄 **Pagination** — Server-side pagination for large datasets
-- 🌙 **Dark mode** — Toggle between light and dark themes (persisted in localStorage)
-- 📱 **Responsive** — Mobile-first with hamburger menu and slide-out navigation
+- 📅 **Month navigation** — Browse bills month-by-month with prev/next arrows and dropdown
+- 🌙 **Dark mode** — Light / Dark / System theme (applies instantly, saved to backend)
+- 📱 **Responsive** — Mobile-first with sidebar navigation
 
 ### Spending Analytics
 - 📊 **Category pie chart** — Donut chart showing spending breakdown by category (Recharts)
-- 📈 **Monthly trend chart** — Line chart showing spending over the last 12 months
-- 💰 **Budget alerts** — Set per-category spending limits with progress bars (warning at 80%, danger at 100%)
-- 📋 **Insights page** — Dedicated analytics view split from the main dashboard
+- 📈 **Monthly trend chart** — Bar chart showing spending over time
+- 💰 **Budget alerts** — Monthly limit + per-category limits with danger (over) and warning (80%+) alerts on dashboard
+- 📋 **Period filters** — Week / Month / Quarter / Year with trend comparison and dynamic insights
 
-### Bill Management
-- 📅 **Due dates** — Set due dates on bills, shown on bill cards
-- ⏰ **Upcoming bills** — Widget showing bills due in the next 7 days with overdue alerts
-- 🔄 **Recurring bills** — Mark bills as monthly/quarterly/yearly; auto-creates new copies via daily cron
-- ✅ **Payment tracking** — Toggle paid/unpaid status with visual indicators
+### Calendar
+- 📅 **Interactive calendar** — Bills shown as chips on due dates
+- 📋 **Day details** — Click any day to see bills and toggle payment
+- 📊 **Month stats** — Total amount, paid/unpaid/overdue counts
+- ⏰ **Upcoming bills** — Next 30 days sidebar
 
-### Polish
-- 👤 **Profile page** — View email, member since date, change password
-- ⚙️ **Settings page** — Display currency, budget limits, export tools
-- 📄 **CSV export** — Download bills as CSV file
-- 📑 **PDF export** — Capture dashboard as PDF (html2canvas + jsPDF)
-- 🧭 **Navigation** — Header nav for Dashboard, Insights, Profile, Settings
-- 🔔 **Toast notifications** — Feedback for all user actions
-- 🇲🇲 **Myanmar language** — i18n infrastructure in place, Burmese translations in progress
+### Profile & Settings
+- 👤 **Profile** — Display name, avatar upload (Cloudinary), account stats (total bills, paid, spent)
+- 🔑 **Change password** — With validation (8 chars + 1 number)
+- 💱 **Currency selector** — Choose from 6 currencies (MMK, USD, EUR, GBP, JPY, THB)
+- 🎨 **Theme** — Light / Dark / System (applies instantly)
+- 💰 **Budget alerts** — Toggle on/off, monthly limit, per-category limits
+- 📄 **CSV export** — Download all bills as spreadsheet
+
+### Background Uploads
+- ⚡ **Fire-and-forget** — Uploads continue when navigating away from upload page
+- 📊 **Progress indicator** — Floating bottom-right shows active uploads with dismiss buttons
+- 🔔 **Toast notifications** — Success/error alerts on completion
+- 📁 **Multi-file** — Upload multiple bills in parallel
 
 ### Security
 - 🔒 **httpOnly cookies** — JWT tokens stored in httpOnly cookies (XSS-safe)
@@ -140,12 +138,12 @@ No API keys needed for OCR (runs offline). No subscription fees. Just upload and
 | **AI Classification** | Cohere Command A |
 | **Auth** | JWT (jsonwebtoken + bcryptjs) + httpOnly cookies |
 | **File Upload** | Multer (memory storage) |
-| **Charts** | Recharts (pie + line charts) |
-| **PDF Export** | jsPDF + html2canvas |
+| **Charts** | Recharts (pie + bar charts) |
 | **Scheduling** | node-cron (recurring bills) |
 | **Logging** | Pino (structured JSON in production) |
 | **Security** | Helmet, express-rate-limit, cookie-parser |
 | **Icons** | Lucide React |
+| **Currency** | open.er-api.com (live rates, no API key needed) |
 
 ## Getting Started
 
@@ -235,6 +233,19 @@ cd client && npm run dev        # http://localhost:5173
 | `POST` | `/api/v1/bills/:id/recurring` | Set recurring schedule (`monthly`, `quarterly`, `yearly`) |
 | `DELETE` | `/api/v1/bills/:id` | Delete a bill (removes from MongoDB and Cloudinary) |
 
+### Users
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/users/me` | Full profile + settings |
+| `PATCH` | `/api/v1/users/profile` | Update display name |
+| `PATCH` | `/api/v1/users/avatar` | Upload avatar image |
+| `DELETE` | `/api/v1/users/avatar` | Remove avatar |
+| `PATCH` | `/api/v1/users/password` | Change password |
+| `PATCH` | `/api/v1/users/settings` | Currency, theme, budget alerts |
+| `GET` | `/api/v1/users/stats` | Account statistics (bills, paid, spent) |
+| `GET` | `/api/v1/users/rates` | Live exchange rates |
+
 ### Other
 
 | Method | Endpoint | Description |
@@ -242,7 +253,7 @@ cd client && npm run dev        # http://localhost:5173
 | `GET` | `/api/health` | Health check |
 | `POST` | `/api/v1/upload` | Upload image to Cloudinary only (auth required) |
 
-> **Note:** Legacy `/api/auth`, `/api/bills`, `/api/upload` routes also work for backward compatibility.
+> **Note:** Legacy `/api/auth`, `/api/bills`, `/api/upload`, `/api/users` routes also work for backward compatibility.
 
 ## Myanmar Bills Support
 
@@ -255,79 +266,93 @@ cd client && npm run dev        # http://localhost:5173
 | 🛒 Shopping | CityMart, Junction, Myanmar Plaza |
 | 📌 Other | Medical, transport, etc. |
 
+## Currency Conversion
+
+All bills are stored in **MMK (Myanmar Kyat)** as the base currency.
+
+### Pipeline
+1. OCR extracts text → amount (e.g., `$145.67`)
+2. Cohere AI detects currency from bill text (symbols, company names, language)
+3. Backend converts to MMK using live rates (`1 USD ≈ 2,103 MMK`)
+4. Stored in MongoDB with `amount` (MMK), `originalCurrency`, `originalAmount`
+5. Frontend converts MMK to user's selected currency for display
+
+### Supported Currencies
+| Currency | Code | Symbol | Example Rate |
+|----------|------|--------|-------------|
+| Myanmar Kyat | MMK | K | 1 K = 1 MMK |
+| US Dollar | USD | $ | 1 $ ≈ 2,103 MMK |
+| Euro | EUR | € | 1 € ≈ 2,402 MMK |
+| British Pound | GBP | £ | 1 £ ≈ 2,820 MMK |
+| Japanese Yen | JPY | ¥ | 1 ¥ ≈ 13 MMK |
+| Thai Baht | THB | ฿ | 1 ฿ ≈ 63 MMK |
+
+### Rate Source
+Live rates from [open.er-api.com](https://open.er-api.com) (free, no API key required). Rates are cached for 1 hour. Falls back to hardcoded rates if the API is unavailable.
+
 ## Project Structure
 
 ```
-phyat-paing/
+pyat-paing/
 ├── client/                          # React + TypeScript + Vite
 │   ├── src/
-│   │   ├── App.tsx                  # App shell with navigation + theme toggle
+│   │   ├── App.tsx                  # Routes, theme, lazy loading, upload indicator
 │   │   ├── types.ts                 # Shared TypeScript interfaces
-│   │   ├── navigation.ts            # Nav items, brand name, tagline
-│   │   ├── i18n/
-│   │   │   └── en.json              # English translation strings
-│   │   ├── components/
-│   │   │   ├── AuthPage.tsx         # Login/register page
-│   │   │   ├── AuthContext.tsx      # JWT token management + apiFetch
-│   │   │   ├── BillUploader.tsx     # File input + upload with progress stages
-│   │   │   ├── BillDashboard.tsx    # Main dashboard with filters + state
-│   │   │   ├── BillCard.tsx         # Bill card (view, edit, delete, payment toggle)
-│   │   │   ├── BillEditModal.tsx    # Modal for editing bill details + recurring
-│   │   │   ├── CategoryTabs.tsx     # 7 category filter tabs
-│   │   │   ├── Sidebar.tsx          # Month/year date filter sidebar
-│   │   │   ├── InsightsPage.tsx     # Analytics page (charts + budgets)
-│   │   │   ├── SpendingOverview.tsx # Donut chart + budget alerts
-│   │   │   ├── MonthlyTrendChart.tsx# Monthly spending line chart
-│   │   │   ├── UpcomingBills.tsx    # Bills due in next 7 days
-│   │   │   ├── PaymentToggle.tsx    # Mark bills paid/unpaid
-│   │   │   ├── RecurringBadge.tsx   # Recurring bill indicator
-│   │   │   ├── ProfilePage.tsx      # User profile + change password
-│   │   │   ├── SettingsPage.tsx     # Currency, budgets, export
-│   │   │   ├── MobileNav.tsx        # Slide-out mobile navigation
-│   │   │   ├── ThemeToggle.tsx      # Dark/light mode toggle
-│   │   │   ├── ExportButtons.tsx    # CSV + PDF export
-│   │   │   ├── Toast.tsx            # Toast notification component
-│   │   │   └── ErrorBoundary.tsx    # React error boundary
+│   │   ├── hooks/
+│   │   │   ├── useCurrency.ts       # Live currency conversion hook
+│   │   │   └── useTheme.ts          # Global theme store (localStorage + backend)
 │   │   ├── utils/
-│   │   │   └── nav.ts               # Nav config (items, brand, tagline)
-│   │   ├── App.css                  # All component styles
-│   │   └── index.css                # CSS variables + global reset
-│   └── vite.config.ts               # Vite config + /api proxy
+│   │   │   ├── currency.ts          # Currency formatting & conversion
+│   │   │   └── nav.ts               # Navigation config
+│   │   ├── components/
+│   │   │   ├── AuthContext.tsx       # JWT auth, apiFetch
+│   │   │   ├── AuthPage.tsx         # Login/register
+│   │   │   ├── UploadContext.tsx     # Background upload state + events
+│   │   │   ├── Sidebar.tsx          # Navigation + profile + avatar
+│   │   │   ├── Toast.tsx            # Toast notifications
+│   │   │   └── ErrorBoundary.tsx    # React error boundary
+│   │   ├── layouts/
+│   │   │   └── AppLayout.tsx        # Sidebar + outlet
+│   │   └── pages/
+│   │       ├── DashboardPage.tsx     # Overview + metrics + budget alerts
+│   │       ├── BillsPage.tsx         # Bill list + month navigation + edit
+│   │       ├── UploadPage.tsx        # Drag & drop + recent uploads
+│   │       ├── AnalyticsPage.tsx     # Charts + insights + period filters
+│   │       ├── CalendarPage.tsx      # Interactive calendar + day details
+│   │       ├── SettingsPage.tsx      # Currency, theme, budget, export
+│   │       └── ProfilePage.tsx       # Avatar, name, password, stats
+│   └── vite.config.ts               # Vite config + /api proxy + code splitting
 ├── server/                          # Express + Mongoose + Cloudinary + Tesseract + Cohere
 │   ├── src/
 │   │   ├── app.js                   # Express app with middleware + routes
 │   │   ├── server.js                # Bootstrap: env → MongoDB → Express + shutdown
 │   │   ├── models/
-│   │   │   ├── Bill.js              # Mongoose bill schema (due dates, recurring, payment)
-│   │   │   └── User.js              # Mongoose user schema (account lockout)
+│   │   │   ├── Bill.js              # Bill schema (currency, amount, recurring, payment)
+│   │   │   └── User.js              # User schema (profile, settings, budget alerts)
 │   │   ├── controllers/
-│   │   │   ├── billController.js    # CRUD + pipeline + trends + export + payment
-│   │   │   └── authController.js    # Register / login / logout / me / change-password
+│   │   │   ├── billController.js    # CRUD + pipeline + currency conversion
+│   │   │   ├── authController.js    # Register / login / logout / change-password
+│   │   │   └── userController.js    # Profile / settings / avatar / rates
 │   │   ├── routes/
-│   │   │   ├── billRoutes.js        # /api/v1/bills routes (rate limited)
-│   │   │   ├── authRoutes.js        # /api/v1/auth routes (rate limited)
-│   │   │   └── upload.js            # /api/v1/upload routes (auth + rate limited)
+│   │   │   ├── billRoutes.js        # /api/v1/bills (rate limited)
+│   │   │   ├── authRoutes.js        # /api/v1/auth (rate limited)
+│   │   │   ├── userRoutes.js        # /api/v1/users (auth required)
+│   │   │   └── upload.js            # /api/v1/upload (Cloudinary only)
 │   │   ├── middleware/
 │   │   │   ├── upload.js            # Multer memoryStorage config
 │   │   │   └── auth.js              # JWT verification (cookie + header)
-│   │   ├── config/db.js             # MongoDB connection (production-safe)
 │   │   └── utils/
-│   │       ├── cloudinaryStorage.js # upload/delete with retry logic
+│   │       ├── cloudinaryStorage.js # upload/delete with retry
 │   │       ├── ocrService.js        # Tesseract.js scheduler pool (eng+mya)
-│   │       ├── cohereService.js     # Cohere structured JSON extraction (cached client)
-│   │       ├── recurringService.js  # Daily cron for recurring bill auto-creation
+│   │       ├── cohereService.js     # AI classification + currency detection
+│   │       ├── currencyConversion.js # Live rates + MMK conversion
+│   │       ├── recurringService.js  # Daily cron for recurring bills
 │   │       └── logger.js            # Pino structured logger
 │   └── .env.example                 # Environment variables template
-├── docs/
-│   ├── images/
-│   │   ├── auth.png                 # Login page (desktop)
-│   │   ├── auth-mobile.png          # Login page (mobile)
-│   │   ├── dashboard.png            # Dashboard (desktop)
-│   │   ├── dashboard-mobile.png     # Dashboard (mobile)
-│   │   ├── upload.png               # Upload page
-│   │   └── analytics.png            # Analytics/insights page
-│   └── superpowers/specs/           # Design docs + audit reports
-├── CLAUDE.md                        # AI assistant instructions + allowed APIs
+├── slides/
+│   ├── presentation.md              # Marp presentation slides
+│   └── screenshots/                 # Playwright screenshots
+├── CLAUDE.md                        # AI assistant instructions
 └── .gitignore
 ```
 

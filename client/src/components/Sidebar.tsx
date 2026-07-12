@@ -1,171 +1,110 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
+import { Receipt, Settings, LogOut } from 'lucide-react';
+import { NAV_ITEMS, BRAND_NAME } from '../utils/nav';
+import { useAuth } from './AuthContext';
 
-interface MonthEntry {
-  year: number;
-  month: number;
-  label: string;
-  count: number;
-}
+export default function Sidebar() {
+  const { user, apiFetch, logout } = useAuth();
+  const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
 
-interface SidebarProps {
-  months: MonthEntry[];
-  selectedYear: number | null;
-  selectedMonth: number | null;
-  onSelectDate: (year: number | null, month: number | null) => void;
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const MONTH_ABBR = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
-export default function Sidebar({
-  months,
-  selectedYear,
-  selectedMonth,
-  onSelectDate,
-  isOpen,
-  onClose,
-}: SidebarProps) {
-  const sidebarRef = useRef<HTMLElement>(null);
-
-  // Close on Escape key
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await apiFetch('/api/v1/users/me');
+        if (res.ok) {
+          const data = await res.json();
+          setDisplayName(data.displayName || '');
+          setAvatarUrl(data.avatarUrl || '');
+        }
+      } catch {
+        // fallback to email
       }
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
+    })();
+  }, [user, apiFetch]);
 
-  // Trap focus and restore on close
-  useEffect(() => {
-    if (!isOpen) return;
-    const sidebar = sidebarRef.current;
-    if (!sidebar) return;
-
-    const prevFocused = document.activeElement as HTMLElement | null;
-
-    // Focus the close button when sidebar opens
-    const closeBtn = sidebar.querySelector('.sidebar__close') as HTMLElement | null;
-    closeBtn?.focus();
-
-    return () => {
-      prevFocused?.focus();
-    };
-  }, [isOpen]);
-
-  // Group months by year
-  const grouped = months.reduce<Record<number, MonthEntry[]>>((acc, m) => {
-    if (!acc[m.year]) acc[m.year] = [];
-    acc[m.year].push(m);
-    return acc;
-  }, {});
-
-  const years = Object.keys(grouped)
-    .map(Number)
-    .sort((a, b) => b - a);
-
-  const isAllTime = selectedYear === null;
-
-  const handleSelect = (year: number | null, month: number | null) => {
-    onSelectDate(year, month);
-    // On mobile, close sidebar after selection
-    if (window.innerWidth <= 640) {
-      onClose();
-    }
-  };
-
-  const sidebarContent = (
-    <>
-      <div className="sidebar__header">
-        <h3 className="sidebar__title">📅 Date Filter</h3>
-        <button
-          className="sidebar__close"
-          onClick={onClose}
-          aria-label="Close date filter sidebar"
-        >
-          ✕
-        </button>
-      </div>
-
-      <button
-        className={`sidebar__item sidebar__item--all${isAllTime ? ' sidebar__item--active' : ''}`}
-        onClick={() => handleSelect(null, null)}
-        aria-pressed={isAllTime}
-      >
-        <span>All Time</span>
-      </button>
-
-      {years.length === 0 && (
-        <p className="sidebar__empty">No bills yet — upload one to get started!</p>
-      )}
-
-      <nav aria-label="Browse bills by year and month">
-        {years.map((year) => {
-          const yearMonths = grouped[year].sort((a, b) => b.month - a.month);
-          const isYearActive = selectedYear === year && selectedMonth === null;
-          const totalInYear = yearMonths.reduce((sum, m) => sum + m.count, 0);
-
-          return (
-            <div key={year} className="sidebar__year-group">
-              <button
-                className={`sidebar__item sidebar__item--year${isYearActive ? ' sidebar__item--active' : ''}`}
-                onClick={() => handleSelect(year, null)}
-                aria-pressed={isYearActive}
-                aria-expanded={selectedYear === year}
-              >
-                <span>{year}</span>
-                <span className="sidebar__count" aria-label={`${totalInYear} bills`}>
-                  {totalInYear}
-                </span>
-              </button>
-
-              <div className="sidebar__months" role="group" aria-label={`Months in ${year}`}>
-                {yearMonths.map((m) => {
-                  const isMonthActive = selectedYear === year && selectedMonth === m.month;
-                  return (
-                    <button
-                      key={`${year}-${m.month}`}
-                      className={`sidebar__item sidebar__item--month${isMonthActive ? ' sidebar__item--active' : ''}`}
-                      onClick={() => handleSelect(year, m.month)}
-                      aria-pressed={isMonthActive}
-                    >
-                      <span>{MONTH_ABBR[m.month - 1]}</span>
-                      <span className="sidebar__count" aria-label={`${m.count} bills`}>
-                        {m.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </nav>
-    </>
-  );
+  const name = displayName || user?.email?.split('@')[0] || 'User';
+  const initials = name.slice(0, 2).toUpperCase();
 
   return (
-    <>
-      {/* Overlay (mobile only) */}
-      <div
-        className={`sidebar__overlay${isOpen ? ' sidebar__overlay--visible' : ''}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <aside className="w-[260px] h-screen bg-bg-sidebar flex flex-col py-7 px-5 shrink-0">
+      {/* Brand */}
+      <div className="flex items-center gap-2.5 px-1 mb-8">
+        <Receipt className="w-7 h-7 text-primary-light" />
+        <span className="font-heading text-lg font-bold text-slate-100">
+          {BRAND_NAME}
+        </span>
+      </div>
 
-      <aside
-        ref={sidebarRef}
-        className={`sidebar${isOpen ? ' sidebar--open' : ''}`}
-        aria-label="Date filter"
-      >
-        {sidebarContent}
-      </aside>
-    </>
+      {/* Navigation */}
+      <nav className="flex flex-col gap-1 flex-1">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.id}
+            to={item.path}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                isActive
+                  ? 'bg-primary-dark text-white font-semibold'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-300'
+              }`
+            }
+          >
+            <item.icon className="w-5 h-5" />
+            {item.label}
+          </NavLink>
+        ))}
+
+        <div className="my-4 h-px bg-slate-700" />
+
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              isActive
+                ? 'bg-primary-dark text-white font-semibold'
+                : 'text-slate-400 hover:bg-white/5 hover:text-slate-300'
+            }`
+          }
+        >
+          <Settings className="w-5 h-5" />
+          Settings
+        </NavLink>
+      </nav>
+
+      {/* Profile & Logout */}
+      <div className="flex items-center gap-3 px-1 py-3 rounded-xl bg-white/5">
+        <NavLink
+          to="/profile"
+          className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0 hover:ring-2 hover:ring-primary-light transition-all overflow-hidden"
+        >
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-sm font-semibold text-white">{initials}</span>
+          )}
+        </NavLink>
+        <div className="flex flex-col text-left min-w-0 flex-1">
+          <NavLink
+            to="/profile"
+            className="text-[13px] font-medium text-slate-100 truncate hover:text-white transition-colors"
+          >
+            {name}
+          </NavLink>
+          <span className="text-[11px] text-slate-400 truncate">
+            {user?.email || ''}
+          </span>
+        </div>
+        <button
+          onClick={logout}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white/10 hover:text-red-400 transition-colors cursor-pointer"
+          title="Logout"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
+      </div>
+    </aside>
   );
 }

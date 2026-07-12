@@ -32,6 +32,41 @@ const userSchema = new Schema(
       type: Date,
       default: null,
     },
+
+    // --- Profile ---
+    displayName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
+    },
+    avatarPublicId: {
+      type: String,
+      default: '',
+    },
+
+    // --- Settings ---
+    currency: {
+      type: String,
+      default: 'USD',
+    },
+    theme: {
+      type: String,
+      enum: ['light', 'dark', 'system'],
+      default: 'system',
+    },
+    budgetAlerts: {
+      enabled: { type: Boolean, default: true },
+      monthlyLimit: { type: Number, default: 0 },
+      categoryLimits: {
+        type: Map,
+        of: Number,
+        default: {},
+      },
+    },
   },
   { timestamps: true }
 );

@@ -30,6 +30,14 @@ const billSchema = new Schema(
       required: true,
       min: 0,
     },
+    originalCurrency: {
+      type: String,
+      default: 'MMK',
+    },
+    originalAmount: {
+      type: Number,
+      default: 0,
+    },
     category: {
       type: String,
       required: true,

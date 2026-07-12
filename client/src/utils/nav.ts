@@ -1,20 +1,39 @@
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, BarChart3, User, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Receipt,
+  BarChart3,
+  Calendar,
+  Upload,
+  Settings,
+} from 'lucide-react';
 
-export type Page = 'dashboard' | 'insights' | 'profile' | 'settings';
+export type Page =
+  | 'dashboard'
+  | 'bills'
+  | 'analytics'
+  | 'calendar'
+  | 'upload'
+  | 'settings';
 
 export interface NavItem {
   id: Page;
   label: string;
   icon: LucideIcon;
+  path: string;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'insights',  label: 'Insights',  icon: BarChart3 },
-  { id: 'profile',   label: 'Profile',   icon: User },
-  { id: 'settings',  label: 'Settings',  icon: Settings },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+  { id: 'bills', label: 'Bills', icon: Receipt, path: '/bills' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/analytics' },
+  { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/calendar' },
+  { id: 'upload', label: 'Upload Bill', icon: Upload, path: '/upload' },
 ];
 
-export const BRAND_NAME = 'Phyat Paing (ဖြတ်ပိုင်း)';
-export const TAGLINE = 'Upload bills — we extract the details.';
+export const SETTINGS_NAV: NavItem[] = [
+  { id: 'settings', label: 'Profile', icon: Settings, path: '/settings' },
+];
+
+export const BRAND_NAME = 'Pyat Paing';
+export const TAGLINE = 'AI-powered bill organizer for Myanmar households.';
