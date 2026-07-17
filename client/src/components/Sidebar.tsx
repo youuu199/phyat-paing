@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Receipt, Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import { NAV_ITEMS, BRAND_NAME } from '../utils/nav';
 import { useAuth } from './AuthContext';
 
