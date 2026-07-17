@@ -3,7 +3,7 @@ marp: true
 paginate: true
 transition: fade
 size: 16:9
-title: Pyat Paing — AI-Powered Bill Organizer
+title: Phyat Paing — AI-Powered Bill Organizer
 style: |
   :root {
     --paper: #FAF5EA;
@@ -69,7 +69,7 @@ style: |
 
 <span class="tag">MERN Stack Project</span>
 
-# Pyat Paing
+# Phyat Paing
 
 ### AI-Powered Bill Organizer for Myanmar
 
@@ -91,7 +91,7 @@ Managing household bills in Myanmar is painful:
 
 ## The Solution
 
-**Pyat Paing** automates the entire bill management workflow:
+**Phyat Paing** automates the entire bill management workflow:
 
 1. 📸 **Snap & Upload** — take a photo of any bill
 2. 👁️ **OCR Extraction** — reads Myanmar + English text (offline, free)

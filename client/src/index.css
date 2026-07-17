@@ -649,9 +649,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==================== Responsive ==================== */
-@media (max-width: 768px) {
+@media (max-width: 639px) {
   .page {
     padding: 1rem;
+  }
+
+  .page-header-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .profile-grid {
@@ -684,4 +689,37 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     text-align: center;
   }
+}
+
+@media (min-width: 640px) and (max-width: 1024px) {
+  .page {
+    padding: 1.5rem;
+  }
+}
+
+/* Touch target minimums for mobile */
+@media (max-width: 639px) {
+  .btn {
+    min-height: 44px;
+    padding: 0.625rem 1rem;
+  }
+
+  .form-input {
+    min-height: 48px;
+    padding: 0.75rem;
+  }
+
+  .settings-tab {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Hide scrollbar but keep scrolling functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

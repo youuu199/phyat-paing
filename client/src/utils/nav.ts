@@ -35,5 +35,5 @@ export const SETTINGS_NAV: NavItem[] = [
   { id: 'settings', label: 'Profile', icon: Settings, path: '/settings' },
 ];
 
-export const BRAND_NAME = 'Pyat Paing';
+export const BRAND_NAME = 'Phyat Paing';
 export const TAGLINE = 'AI-powered bill organizer for Myanmar households.';

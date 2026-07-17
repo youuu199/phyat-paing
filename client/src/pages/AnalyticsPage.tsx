@@ -48,15 +48,15 @@ function MetricCard({
   iconColor: string;
 }) {
   return (
-    <div className="flex flex-col gap-2.5 p-[18px] bg-bg-card rounded-xl border border-border flex-1">
+    <div className="flex flex-col gap-2 sm:gap-2.5 p-3.5 sm:p-[18px] bg-bg-card rounded-xl border border-border flex-1 min-w-0">
       <div className="flex items-center justify-between">
         <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg}`}
+          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center ${iconBg}`}
         >
-          <Icon className={`w-[18px] h-[18px] ${iconColor}`} />
+          <Icon className={`w-4 h-4 sm:w-[18px] sm:h-[18px] ${iconColor}`} />
         </div>
         <div
-          className={`flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-medium ${
+          className={`flex items-center gap-1 h-5 sm:h-6 px-1.5 sm:px-2 rounded-full text-[10px] sm:text-[11px] font-medium ${
             up ? 'bg-emerald-50 text-success' : 'bg-amber-50 text-warning'
           }`}
         >
@@ -68,10 +68,10 @@ function MetricCard({
           {change}
         </div>
       </div>
-      <span className="font-heading text-2xl font-bold text-text-primary">
+      <span className="font-heading text-lg sm:text-2xl font-bold text-text-primary truncate">
         {value}
       </span>
-      <span className="text-xs text-text-secondary">{label}</span>
+      <span className="text-[11px] sm:text-xs text-text-secondary truncate">{label}</span>
     </div>
   );
 }
@@ -332,23 +332,23 @@ export default function AnalyticsPage() {
   const topCategory = sortedCategories[0];
 
   return (
-    <div className="flex flex-col p-8 gap-6">
+    <div className="flex flex-col p-4 sm:p-6 lg:p-8 gap-5 sm:gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="font-heading text-2xl font-bold text-text-primary">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-text-primary">
             Analytics
           </h1>
           {periodLabel && (
-            <span className="text-[13px] text-text-secondary">{periodLabel}</span>
+            <span className="text-[12px] sm:text-[13px] text-text-secondary">{periodLabel}</span>
           )}
         </div>
-        <div className="flex bg-bg-card rounded-lg border border-border p-[3px]">
+        <div className="flex bg-bg-card rounded-lg border border-border p-[3px] self-start">
           {['Week', 'Month', 'Quarter', 'Year'].map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`h-8 px-3.5 rounded-md text-xs font-medium transition-colors ${
+              className={`h-8 px-2.5 sm:px-3.5 rounded-md text-[11px] sm:text-xs font-medium transition-colors ${
                 period === p
                   ? 'bg-primary text-white font-semibold'
                   : 'text-text-secondary'
@@ -360,8 +360,8 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Metrics */}
-      <div className="flex gap-4">
+      {/* Metrics — 2x2 on mobile, 4 in row on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {loading ? (
           <>
             <MetricCardSkeleton />
@@ -411,13 +411,13 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* Charts Row */}
-      <div className="flex gap-5 flex-1">
+      {/* Charts Row — stacked on mobile, side-by-side on desktop */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 flex-1">
         {/* Monthly Spending Chart */}
-        <div className="bg-bg-card rounded-xl border border-border p-5 flex flex-col gap-4 w-[400px]">
+        <div className="bg-bg-card rounded-xl border border-border p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 w-full lg:w-[400px] shrink-0">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-primary" />
-            <h3 className="font-heading text-[15px] font-semibold text-text-primary">
+            <h3 className="font-heading text-[14px] sm:text-[15px] font-semibold text-text-primary">
               Monthly Spending
             </h3>
           </div>
@@ -426,19 +426,19 @@ export default function AnalyticsPage() {
           ) : trends.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-text-muted text-xs">No data yet</div>
           ) : (
-            <div className="flex items-end gap-2 flex-1 h-[180px]">
+            <div className="flex items-end gap-1.5 sm:gap-2 flex-1 h-[160px] sm:h-[180px]">
               {trends.slice(-8).map((t) => {
                 const height = maxTrendTotal > 0 ? (t.total / maxTrendTotal) * 100 : 0;
                 const monthLabel = new Date(t.year, t.month - 1).toLocaleString('en', { month: 'short' });
                 return (
-                  <div key={`${t.year}-${t.month}`} className="flex flex-col items-center gap-1.5 flex-1">
-                    <span className="text-[10px] font-mono text-text-muted">{formatCurrency(t.total)}</span>
+                  <div key={`${t.year}-${t.month}`} className="flex flex-col items-center gap-1 sm:gap-1.5 flex-1">
+                    <span className="text-[8px] sm:text-[10px] font-mono text-text-muted hidden sm:block">{formatCurrency(t.total)}</span>
                     <div
                       className="w-full bg-primary rounded-t-md transition-all hover:bg-primary-dark"
                       style={{ height: `${Math.max(height, 4)}%` }}
                       title={`${monthLabel}: ${formatCurrency(t.total)} (${t.count} bills)`}
                     />
-                    <span className="text-[10px] text-text-muted">{monthLabel}</span>
+                    <span className="text-[9px] sm:text-[10px] text-text-muted">{monthLabel}</span>
                   </div>
                 );
               })}
@@ -447,10 +447,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Category Breakdown */}
-        <div className="bg-bg-card rounded-xl border border-border p-5 flex flex-col gap-4 flex-1">
+        <div className="bg-bg-card rounded-xl border border-border p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 flex-1">
           <div className="flex items-center gap-2">
             <PieChart className="w-4 h-4 text-primary" />
-            <h3 className="font-heading text-[15px] font-semibold text-text-primary">
+            <h3 className="font-heading text-[14px] sm:text-[15px] font-semibold text-text-primary">
               Spending by Category
             </h3>
           </div>
@@ -459,25 +459,25 @@ export default function AnalyticsPage() {
           ) : sortedCategories.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-text-muted text-xs">No data yet</div>
           ) : (
-            <div className="flex flex-col gap-3.5 flex-1">
+            <div className="flex flex-col gap-3 sm:gap-3.5 flex-1">
               {sortedCategories.map((cat) => (
                 <div key={cat.name} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-medium text-text-primary">
+                    <span className="text-[12px] sm:text-[13px] font-medium text-text-primary truncate">
                       {cat.name}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-text-secondary">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono text-[11px] sm:text-xs text-text-secondary">
                         {formatCurrency(cat.amount)}
                       </span>
-                      <span className="text-[11px] text-text-muted w-8 text-right">
+                      <span className="text-[10px] sm:text-[11px] text-text-muted w-7 sm:w-8 text-right">
                         {cat.pct}%
                       </span>
                     </div>
                   </div>
-                  <div className="w-full h-2.5 bg-bg rounded-full">
+                  <div className="w-full h-2 sm:h-2.5 bg-bg rounded-full">
                     <div
-                      className="h-2.5 rounded-full transition-all"
+                      className="h-2 sm:h-2.5 rounded-full transition-all"
                       style={{
                         width: `${cat.pct}%`,
                         backgroundColor: CATEGORY_COLORS[cat.name] || '#6B7280',
@@ -491,25 +491,25 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Insights */}
-      <div className="bg-bg-card rounded-xl border border-border p-5 flex flex-col gap-3.5">
-        <h3 className="font-heading text-[15px] font-semibold text-text-primary">
+      {/* Insights — stacked on mobile */}
+      <div className="bg-bg-card rounded-xl border border-border p-4 sm:p-5 flex flex-col gap-3 sm:gap-3.5">
+        <h3 className="font-heading text-[14px] sm:text-[15px] font-semibold text-text-primary">
           Insights
         </h3>
         {loading ? (
-          <div className="text-xs text-text-muted">Loading insights...</div>
+          <div className="text-[11px] sm:text-xs text-text-muted">Loading insights...</div>
         ) : (
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             {/* Top spending category */}
             {topCategory && (
               <div className="flex items-center gap-2.5 p-3 bg-bg rounded-lg flex-1">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${CATEGORY_COLORS[topCategory.name]}20` }}
                 >
                   <TrendingUp className="w-[18px] h-[18px]" style={{ color: CATEGORY_COLORS[topCategory.name] || '#6B7280' }} />
                 </div>
-                <span className="text-xs text-text-secondary">
+                <span className="text-[11px] sm:text-xs text-text-secondary">
                   Top spending: <strong className="text-text-primary">{topCategory.name}</strong> at {formatCurrency(topCategory.amount)} ({topCategory.pct}%)
                 </span>
               </div>
@@ -518,15 +518,15 @@ export default function AnalyticsPage() {
             {/* Overdue warning */}
             {overdueCount > 0 ? (
               <div className="flex items-center gap-2.5 p-3 bg-bg rounded-lg flex-1">
-                <TriangleAlert className="w-[18px] h-[18px] text-warning" />
-                <span className="text-xs text-text-secondary">
+                <TriangleAlert className="w-[18px] h-[18px] text-warning shrink-0" />
+                <span className="text-[11px] sm:text-xs text-text-secondary">
                   <strong className="text-text-primary">{overdueCount} bill{overdueCount > 1 ? 's' : ''}</strong> overdue — pay soon to avoid late fees
                 </span>
               </div>
             ) : (
               <div className="flex items-center gap-2.5 p-3 bg-bg rounded-lg flex-1">
-                <CircleCheck className="w-[18px] h-[18px] text-success" />
-                <span className="text-xs text-text-secondary">
+                <CircleCheck className="w-[18px] h-[18px] text-success shrink-0" />
+                <span className="text-[11px] sm:text-xs text-text-secondary">
                   All bills are on track — no overdue payments
                 </span>
               </div>
@@ -534,8 +534,8 @@ export default function AnalyticsPage() {
 
             {/* Payment progress */}
             <div className="flex items-center gap-2.5 p-3 bg-bg rounded-lg flex-1">
-              <CircleCheck className="w-[18px] h-[18px] text-primary" />
-              <span className="text-xs text-text-secondary">
+              <CircleCheck className="w-[18px] h-[18px] text-primary shrink-0" />
+              <span className="text-[11px] sm:text-xs text-text-secondary">
                 {paidCount} of {bills.length} bills paid
                 {bills.length > 0 && (
                   <> — <strong className="text-primary">{Math.round((paidCount / bills.length) * 100)}%</strong> complete</>

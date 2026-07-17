@@ -5,9 +5,11 @@ import {
   Mail,
   Lock,
   Eye,
+  EyeOff,
   Loader2,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import useBreakpoint from '../hooks/useBreakpoint';
 
 const FEATURES = [
   'OCR text extraction for Myanmar & English bills',
@@ -17,12 +19,15 @@ const FEATURES = [
 
 export default function AuthPage() {
   const { login, register } = useAuth();
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const resetForm = () => {
     setEmail('');
@@ -76,32 +81,51 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex h-screen bg-white">
-      {/* Left Brand Panel */}
-      <div className="w-[620px] bg-primary flex flex-col items-center justify-center px-[60px] gap-8 shrink-0">
-        <div className="flex flex-col items-center gap-4">
-          <Receipt className="w-16 h-16 text-white" />
-          <span className="font-heading text-[28px] font-bold text-white">
-            Pyat Paing
-          </span>
-        </div>
-        <p className="text-[#C7D2FE] text-center text-[15px] leading-relaxed max-w-[400px]">
-          AI-powered bill organizer for Myanmar households. Upload, track, and
-          manage all your utility bills in one place.
-        </p>
-        <div className="flex flex-col gap-4 items-start max-w-[380px]">
-          {FEATURES.map((feat) => (
-            <div key={feat} className="flex items-center gap-2.5">
-              <CheckCircle className="w-5 h-5 text-[#A5B4FC] shrink-0" />
-              <span className="text-[#E0E7FF] text-sm">{feat}</span>
+    <div className={`flex bg-white ${isMobile ? 'flex-col h-screen' : 'h-screen'}`}>
+      {/* Left Brand Panel — hidden on mobile, compact branding shown above form */}
+      {!isMobile && (
+        <div className="w-[620px] bg-primary flex flex-col items-center justify-center px-[60px] gap-8 shrink-0">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center overflow-hidden">
+              <img src="/image-logo.png" alt="Phyat Paing" className="w-12 h-12 object-contain" />
             </div>
-          ))}
+            <span className="font-heading text-[28px] font-bold text-white">
+              Phyat Paing
+            </span>
+          </div>
+          <p className="text-[#C7D2FE] text-center text-[15px] leading-relaxed max-w-[400px]">
+            AI-powered bill organizer for Myanmar households. Upload, track, and
+            manage all your utility bills in one place.
+          </p>
+          <div className="flex flex-col gap-4 items-start max-w-[380px]">
+            {FEATURES.map((feat) => (
+              <div key={feat} className="flex items-center gap-2.5">
+                <CheckCircle className="w-5 h-5 text-[#A5B4FC] shrink-0" />
+                <span className="text-[#E0E7FF] text-sm">{feat}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Right Form Panel */}
-      <div className="flex-1 flex items-center justify-center px-[60px]">
-        <div className="w-[420px] flex flex-col gap-7">
+      <div className={`flex-1 flex items-center justify-center px-6 ${isMobile ? 'py-8' : 'px-[60px]'}`}>
+        <div className={`w-full flex flex-col gap-7 ${isMobile ? 'max-w-full' : 'max-w-[420px]'}`}>
+          {/* Mobile-only compact branding */}
+          {isMobile && (
+            <div className="flex flex-col items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                <img src="/image-logo.png" alt="Phyat Paing" className="w-9 h-9 object-contain" />
+              </div>
+              <span className="font-heading text-xl font-bold text-text-primary">
+                Phyat Paing
+              </span>
+              <p className="text-sm text-text-secondary text-center">
+                AI-powered bill organizer for Myanmar households.
+              </p>
+            </div>
+          )}
+
           <div>
             <h1 className="font-heading text-[28px] font-bold text-text-primary">
               {mode === 'login' ? 'Welcome back' : 'Create account'}
@@ -144,7 +168,7 @@ export default function AuthPage() {
               <label className="text-[13px] font-medium text-text-primary">
                 Email
               </label>
-              <div className="flex items-center h-11 px-3.5 bg-bg rounded-lg border border-border gap-2">
+              <div className={`flex items-center px-3.5 bg-bg rounded-lg border border-border gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
                 <Mail className="w-[18px] h-[18px] text-text-muted" />
                 <input
                   type="email"
@@ -164,10 +188,10 @@ export default function AuthPage() {
               <label className="text-[13px] font-medium text-text-primary">
                 Password
               </label>
-              <div className="flex items-center h-11 px-3.5 bg-bg rounded-lg border border-border gap-2">
+              <div className={`flex items-center px-3.5 bg-bg rounded-lg border border-border gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
                 <Lock className="w-[18px] h-[18px] text-text-muted" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -175,7 +199,17 @@ export default function AuthPage() {
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   disabled={submitting}
                 />
-                <Eye className="w-[18px] h-[18px] text-text-muted cursor-pointer" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="p-1 hover:bg-bg-card rounded-md transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-[18px] h-[18px] text-text-muted" />
+                  ) : (
+                    <Eye className="w-[18px] h-[18px] text-text-muted" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -185,7 +219,7 @@ export default function AuthPage() {
                 <label className="text-[13px] font-medium text-text-primary">
                   Confirm Password
                 </label>
-                <div className="flex items-center h-11 px-3.5 bg-bg rounded-lg border border-border gap-2">
+                <div className={`flex items-center px-3.5 bg-bg rounded-lg border border-border gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
                   <Lock className="w-[18px] h-[18px] text-text-muted" />
                   <input
                     type="password"
@@ -203,7 +237,11 @@ export default function AuthPage() {
             {/* Forgot password */}
             {mode === 'login' && (
               <div className="flex justify-end">
-                <button type="button" className="text-[13px] text-primary">
+                <button
+                  type="button"
+                  onClick={() => setError('Password recovery is not yet available. Please contact support.')}
+                  className="text-[13px] text-primary hover:underline"
+                >
                   Forgot password?
                 </button>
               </div>
@@ -220,7 +258,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center justify-center h-[46px] bg-primary rounded-lg text-[15px] font-semibold text-white disabled:opacity-50"
+              className={`flex items-center justify-center bg-primary rounded-lg text-[15px] font-semibold text-white disabled:opacity-50 ${isMobile ? 'h-12' : 'h-[46px]'}`}
             >
               {submitting ? (
                 <>

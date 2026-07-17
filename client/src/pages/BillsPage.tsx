@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Filter,
   Download,
@@ -26,6 +27,7 @@ import { onBillUpload } from '../components/UploadContext';
 import { type Bill } from '../types';
 import { BillTableSkeleton } from '../components/ui/Skeleton';
 import ImageLightbox from '../components/ui/ImageLightbox';
+import useBreakpoint from '../hooks/useBreakpoint';
 
 interface MonthEntry {
   year: number;
@@ -68,11 +70,13 @@ function BillFormModal({
   onClose,
   onSave,
   onSaveWithImage,
+  isMobile,
 }: {
   bill?: Bill | null;
   onClose: () => void;
   onSave: (data: BillFormData) => Promise<void>;
   onSaveWithImage?: (data: BillFormData, file: File) => Promise<void>;
+  isMobile: boolean;
 }) {
   const [form, setForm] = useState<BillFormData>(
     bill
@@ -119,16 +123,18 @@ function BillFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-bg-card rounded-2xl shadow-2xl w-[480px] max-h-[90vh] overflow-y-auto"
+        className={`bg-bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:w-[480px] max-h-[90vh] overflow-y-auto ${
+          isMobile ? 'mx-0' : ''
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h2 className="font-heading text-lg font-semibold text-text-primary">
             {bill ? 'Edit Bill' : 'New Bill'}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-bg">
+          <button onClick={onClose} className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center hover:bg-bg">
             <X className="w-4 h-4 text-text-muted" />
           </button>
         </div>
@@ -197,7 +203,7 @@ function BillFormModal({
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="e.g. Electricity Bill - June"
-              className="h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
+              className="h-11 sm:h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
               required
             />
           </div>
@@ -209,7 +215,7 @@ function BillFormModal({
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
                 placeholder="0"
-                className="h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary font-mono"
+                className="h-11 sm:h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary font-mono"
                 required
                 min="0"
               />
@@ -220,7 +226,7 @@ function BillFormModal({
                 <select
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary outline-none focus:border-primary w-full appearance-none"
+                  className="h-11 sm:h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary outline-none focus:border-primary w-full appearance-none"
                 >
                   {CATEGORIES.filter((c) => c !== 'All').map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -236,17 +242,17 @@ function BillFormModal({
               type="date"
               value={form.dueDate}
               onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              className="h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary outline-none focus:border-primary"
+              className="h-11 sm:h-10 px-3 bg-bg rounded-lg border border-border text-sm text-text-primary outline-none focus:border-primary"
             />
           </div>
           <div className="flex justify-end gap-3 mt-2">
-            <button type="button" onClick={onClose} className="h-10 px-5 rounded-lg border border-border text-[13px] text-text-secondary hover:bg-bg">
+            <button type="button" onClick={onClose} className="h-11 sm:h-10 px-5 rounded-lg border border-border text-[13px] text-text-secondary hover:bg-bg">
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !form.title.trim() || !form.amount}
-              className="h-10 px-6 bg-primary rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
+              className="h-11 sm:h-10 px-6 bg-primary rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
             >
               {saving ? 'Saving...' : bill ? 'Save Changes' : 'Create Bill'}
             </button>
@@ -288,6 +294,9 @@ export default function BillsPage() {
   const { apiFetch } = useAuth();
   const { toast } = useToast();
   const { format: formatCurrency } = useCurrency();
+  const navigate = useNavigate();
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
@@ -296,6 +305,8 @@ export default function BillsPage() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Month navigation
   const [months, setMonths] = useState<MonthEntry[]>([]);
@@ -326,11 +337,12 @@ export default function BillsPage() {
     setLoading(true);
     (async () => {
       try {
-        const url = `/api/v1/bills?year=${selectedMonth.year}&month=${selectedMonth.month}`;
+        const url = `/api/v1/bills?year=${selectedMonth.year}&month=${selectedMonth.month}&limit=20&skip=0`;
         const res = await apiFetch(url);
         if (res.ok) {
           const data = await res.json();
           setBills(data.bills || data || []);
+          setHasMore(data.hasMore || false);
         }
       } catch {
         // silently fail
@@ -362,6 +374,24 @@ export default function BillsPage() {
 
   const goToNextMonth = () => {
     setSelectedMonthIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  const loadMore = async () => {
+    if (!selectedMonth || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const url = `/api/v1/bills?year=${selectedMonth.year}&month=${selectedMonth.month}&limit=20&skip=${bills.length}`;
+      const res = await apiFetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setBills((prev) => [...prev, ...(data.bills || [])]);
+        setHasMore(data.hasMore || false);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   // Summary for current month
@@ -474,21 +504,21 @@ export default function BillsPage() {
   };
 
   return (
-    <div className="flex flex-col p-8 gap-6">
+    <div className="flex flex-col p-4 sm:p-6 lg:p-8 gap-5 sm:gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-heading text-2xl font-bold text-text-primary">Bills</h1>
-          <span className="text-[13px] text-text-secondary">Manage and track your utility bills</span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-1 min-w-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-text-primary">Bills</h1>
+          <span className="text-[12px] sm:text-[13px] text-text-secondary hidden sm:block">Manage and track your utility bills</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="relative">
             <button
               onClick={() => setShowFilter(!showFilter)}
-              className="flex items-center gap-1.5 h-[38px] px-3.5 bg-bg-card rounded-lg border border-border text-text-secondary text-[13px] hover:bg-bg"
+              className="flex items-center gap-1.5 h-10 sm:h-[38px] px-3 sm:px-3.5 bg-bg-card rounded-lg border border-border text-text-secondary text-[13px] hover:bg-bg"
             >
               <Filter className="w-[15px] h-[15px]" />
-              {filterCategory === 'All' ? 'Filter' : filterCategory}
+              <span className="hidden sm:inline">{filterCategory === 'All' ? 'Filter' : filterCategory}</span>
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
             {showFilter && (
@@ -501,24 +531,24 @@ export default function BillsPage() {
           </div>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 h-[38px] px-3.5 bg-bg-card rounded-lg border border-border text-text-secondary text-[13px] hover:bg-bg"
+            className="flex items-center gap-1.5 h-10 sm:h-[38px] px-3 sm:px-3.5 bg-bg-card rounded-lg border border-border text-text-secondary text-[13px] hover:bg-bg"
           >
             <Download className="w-[15px] h-[15px]" />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </button>
           <button
-            onClick={() => { setEditingBill(null); setShowFormModal(true); }}
-            className="flex items-center gap-1.5 h-[38px] px-4 bg-primary rounded-lg text-white text-[13px] font-semibold hover:bg-primary-dark"
+            onClick={() => navigate('/upload')}
+            className="flex items-center gap-1.5 h-10 sm:h-[38px] px-3 sm:px-4 bg-primary rounded-lg text-white text-[13px] font-semibold hover:bg-primary-dark"
           >
             <Plus className="w-[15px] h-[15px]" />
-            New Bill
+            <span className="hidden sm:inline">New Bill</span>
           </button>
         </div>
       </div>
 
       {/* Month Navigation */}
       {months.length > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={goToNextMonth}
             disabled={selectedMonthIndex <= 0}
@@ -530,11 +560,11 @@ export default function BillsPage() {
           <div className="relative">
             <button
               onClick={() => setShowMonthDropdown(!showMonthDropdown)}
-              className="flex items-center gap-2 h-[38px] px-4 bg-bg-card rounded-lg border border-border hover:bg-bg transition-colors"
+              className="flex items-center gap-2 h-9 sm:h-[38px] px-3 sm:px-4 bg-bg-card rounded-lg border border-border hover:bg-bg transition-colors"
             >
               <Calendar className="w-4 h-4 text-primary" />
-              <span className="text-[14px] font-semibold text-text-primary">{selectedMonth?.label}</span>
-              <span className="text-[12px] text-text-muted">({selectedMonth?.count} bills)</span>
+              <span className="text-[13px] sm:text-[14px] font-semibold text-text-primary">{selectedMonth?.label}</span>
+              <span className="text-[11px] sm:text-[12px] text-text-muted">({selectedMonth?.count})</span>
               <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
             </button>
             {showMonthDropdown && (
@@ -564,23 +594,126 @@ export default function BillsPage() {
           </button>
 
           {/* Month summary */}
-          <div className="flex items-center gap-4 ml-4 pl-4 border-l border-border">
+          <div className="flex items-center gap-3 sm:gap-4 sm:ml-4 sm:pl-4 sm:border-l border-border">
             <div className="flex flex-col">
-              <span className="text-[11px] text-text-muted uppercase tracking-wider">Total</span>
-              <span className="text-[15px] font-bold text-text-primary font-mono">{formatCurrency(totalAmount)}</span>
+              <span className="text-[10px] sm:text-[11px] text-text-muted uppercase tracking-wider">Total</span>
+              <span className="text-[13px] sm:text-[15px] font-bold text-text-primary font-mono">{formatCurrency(totalAmount)}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[11px] text-text-muted uppercase tracking-wider">Paid</span>
-              <span className="text-[15px] font-bold text-emerald-600">{paidCount}/{bills.length}</span>
+              <span className="text-[10px] sm:text-[11px] text-text-muted uppercase tracking-wider">Paid</span>
+              <span className="text-[13px] sm:text-[15px] font-bold text-emerald-600">{paidCount}/{bills.length}</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
+      {/* Table (desktop) / Card list (mobile) */}
       {loading ? (
         <BillTableSkeleton />
+      ) : isMobile ? (
+        /* Mobile: Card list */
+        <div className="flex flex-col gap-2.5">
+          {filteredBills.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-text-muted">
+              <Receipt className="w-10 h-10 mb-3" />
+              <span className="text-sm">
+                {filterCategory === 'All' ? 'No bills yet' : `No ${filterCategory} bills`}
+              </span>
+            </div>
+          ) : (
+            filteredBills.map((bill) => {
+              const Icon = CATEGORY_ICONS[bill.category] || Receipt;
+              const colorClass = CATEGORY_COLORS[bill.category] || 'bg-cat-other';
+
+              return (
+                <div key={bill._id} className="flex flex-col gap-3 p-4 bg-bg-card rounded-xl border border-border">
+                  <div className="flex items-center gap-3">
+                    {bill.imageUrl ? (
+                      <img
+                        src={bill.imageUrl}
+                        alt={bill.title}
+                        onClick={() => setLightboxImage({ src: bill.imageUrl, alt: bill.title })}
+                        className="w-10 h-10 rounded-lg object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      />
+                    ) : (
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-medium text-text-primary truncate">{bill.title}</span>
+                      <span className="text-xs text-text-secondary">{bill.category}</span>
+                    </div>
+                    <span className="font-mono text-sm font-semibold text-text-primary">{formatCurrency(bill.amount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-text-secondary">
+                        {bill.dueDate
+                          ? new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          : 'No due date'}
+                      </span>
+                      <button
+                        onClick={() => togglePaid(bill._id)}
+                        className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full transition-colors ${
+                          bill.isPaid
+                            ? 'bg-emerald-50 text-success'
+                            : 'bg-amber-50 text-warning'
+                        }`}
+                      >
+                        {bill.isPaid ? 'Paid ✓' : 'Pay'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => { setEditingBill(bill); setShowFormModal(true); }}
+                        className="w-8 h-8 rounded-md bg-bg flex items-center justify-center hover:bg-indigo-50 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-text-muted" />
+                      </button>
+                      {deleteConfirm === bill._id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDelete(bill._id)}
+                            className="h-7 px-2 bg-danger rounded text-[11px] font-medium text-white"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="h-7 px-2 bg-bg rounded border border-border text-[11px] text-text-muted"
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(bill._id)}
+                          className="w-8 h-8 rounded-md bg-bg flex items-center justify-center hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-text-muted" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* Load More */}
+          {hasMore && filteredBills.length > 0 && (
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="w-full py-3 mt-2 text-sm font-medium text-primary hover:bg-bg-card rounded-lg border border-border transition-colors disabled:opacity-50"
+            >
+              {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
+          )}
+        </div>
       ) : (
+        /* Desktop: Table */
         <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
           <div className="flex items-center h-12 px-5 bg-bg text-text-muted text-xs font-semibold">
             <div className="w-[280px]">Bill</div>
@@ -674,6 +807,19 @@ export default function BillsPage() {
               );
             })
           )}
+
+          {/* Load More */}
+          {hasMore && filteredBills.length > 0 && (
+            <div className="flex justify-center py-4 border-t border-border">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-6 py-2 text-sm font-medium text-primary hover:bg-bg rounded-lg border border-border transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading...' : 'Load More'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -684,6 +830,7 @@ export default function BillsPage() {
           onClose={() => { setShowFormModal(false); setEditingBill(null); }}
           onSave={handleSaveBill}
           onSaveWithImage={handleSaveBillWithImage}
+          isMobile={isMobile}
         />
       )}
 

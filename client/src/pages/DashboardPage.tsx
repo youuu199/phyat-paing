@@ -23,6 +23,7 @@ import { onBillUpload } from '../components/UploadContext';
 import { type Bill } from '../types';
 import { MetricCardSkeleton, BillRowSkeleton } from '../components/ui/Skeleton';
 import ImageLightbox from '../components/ui/ImageLightbox';
+import useBreakpoint from '../hooks/useBreakpoint';
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   Electricity: Zap,
@@ -54,14 +55,14 @@ function MetricCard({
   iconColor: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 p-5 bg-bg-card rounded-xl border border-border flex-1">
+    <div className="flex flex-col gap-2 p-4 sm:p-5 bg-bg-card rounded-xl border border-border flex-1 min-w-0">
       <div
-        className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg}`}
+        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center ${iconBg}`}
       >
-        <Icon className={`w-[18px] h-[18px] ${iconColor}`} />
+        <Icon className={`w-4 h-4 sm:w-[18px] sm:h-[18px] ${iconColor}`} />
       </div>
-      <span className="text-xs text-text-secondary">{label}</span>
-      <span className="font-heading text-[22px] font-bold text-text-primary">
+      <span className="text-[11px] sm:text-xs text-text-secondary truncate">{label}</span>
+      <span className="font-heading text-lg sm:text-[22px] font-bold text-text-primary truncate">
         {value}
       </span>
     </div>
@@ -73,17 +74,17 @@ function BillRow({ bill, onImageClick, onTogglePaid, formatCurrency }: { bill: B
   const colorClass = CATEGORY_BG[bill.category] || 'bg-cat-other';
 
   return (
-    <div className="flex items-center gap-3.5 px-4 h-[72px] bg-bg-card rounded-xl border border-border">
+    <div className="flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 h-auto sm:h-[72px] py-3 sm:py-0 bg-bg-card rounded-xl border border-border">
       {bill.imageUrl ? (
         <img
           src={bill.imageUrl}
           alt={bill.title}
           onClick={() => onImageClick?.(bill.imageUrl, bill.title)}
-          className="w-[42px] h-[42px] rounded-[10px] object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          className="w-10 h-10 sm:w-[42px] sm:h-[42px] rounded-lg sm:rounded-[10px] object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
         />
       ) : (
         <div
-          className={`w-[42px] h-[42px] rounded-[10px] flex items-center justify-center ${colorClass}`}
+          className={`w-10 h-10 sm:w-[42px] sm:h-[42px] rounded-lg sm:rounded-[10px] flex items-center justify-center ${colorClass}`}
         >
           <Icon className="w-5 h-5 text-white" />
         </div>
@@ -129,9 +130,12 @@ export default function DashboardPage() {
   const { apiFetch } = useAuth();
   const navigate = useNavigate();
   const { format: formatCurrency } = useCurrency();
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -143,13 +147,16 @@ export default function DashboardPage() {
     monthlyLimit: number;
     categoryLimits: Record<string, number>;
   } | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchBills = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/v1/bills');
+      const res = await apiFetch('/api/v1/bills?limit=20&skip=0');
       if (res.ok) {
         const data = await res.json();
         setBills(data.bills || data || []);
+        setHasMore(data.hasMore || false);
       }
     } catch {
       // silently fail
@@ -196,6 +203,23 @@ export default function DashboardPage() {
   useEffect(() => {
     return onBillUpload(() => fetchBills());
   }, [fetchBills]);
+
+  const loadMore = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await apiFetch(`/api/v1/bills?limit=20&skip=${bills.length}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBills((prev) => [...prev, ...(data.bills || [])]);
+        setHasMore(data.hasMore || false);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filteredBills = bills.filter((b) => {
     const matchesSearch = b.title.toLowerCase().includes(search.toLowerCase());
@@ -253,26 +277,56 @@ export default function DashboardPage() {
     .sort((a, b) => b.value - a.value);
 
   return (
-    <div className="flex flex-col p-8 gap-7">
+    <div className="flex flex-col p-4 sm:p-6 lg:p-8 gap-5 sm:gap-7">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-heading text-2xl font-bold text-text-primary">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-1 min-w-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-text-primary">
             Dashboard
           </h1>
-          <span className="text-[13px] text-text-secondary">{today}</span>
+          <span className="text-[12px] sm:text-[13px] text-text-secondary truncate">{today}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 h-10 px-3.5 bg-bg-card rounded-lg border border-border w-[260px]">
-            <Search className="w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search bills..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent text-[13px] text-text-primary placeholder:text-text-muted outline-none flex-1"
-            />
-          </div>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Mobile: search icon that expands. Desktop: inline search */}
+          {isMobile ? (
+            <>
+              {searchOpen ? (
+                <div className="flex items-center gap-2 h-10 px-3 bg-bg-card rounded-lg border border-border">
+                  <Search className="w-4 h-4 text-text-muted" />
+                  <input
+                    type="text"
+                    placeholder="Search bills..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="bg-transparent text-[13px] text-text-primary placeholder:text-text-muted outline-none w-32"
+                    autoFocus
+                  />
+                  <button onClick={() => { setSearchOpen(false); setSearch(''); }}>
+                    <X className="w-4 h-4 text-text-muted" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="w-10 h-10 rounded-lg bg-bg-card border border-border flex items-center justify-center"
+                >
+                  <Search className="w-[18px] h-[18px] text-text-primary" />
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-2 h-10 px-3.5 bg-bg-card rounded-lg border border-border w-[260px]">
+              <Search className="w-4 h-4 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search bills..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent text-[13px] text-text-primary placeholder:text-text-muted outline-none flex-1"
+              />
+            </div>
+          )}
+
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
@@ -287,7 +341,7 @@ export default function DashboardPage() {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-[320px] bg-bg-card rounded-xl border border-border shadow-lg z-50 overflow-hidden">
+              <div className="absolute right-0 top-12 w-[300px] sm:w-[320px] bg-bg-card rounded-xl border border-border shadow-lg z-50 overflow-hidden">
                 <div className="flex items-center justify-between p-4 border-b border-border">
                   <span className="font-heading text-sm font-semibold text-text-primary">
                     Notifications
@@ -339,15 +393,19 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-          <button
-            onClick={() => navigate('/upload')}
-            className="flex items-center gap-2 h-10 px-4 bg-primary rounded-lg"
-          >
-            <Upload className="w-4 h-4 text-white" />
-            <span className="text-[13px] font-semibold text-white">
-              Upload Bill
-            </span>
-          </button>
+
+          {/* Desktop: inline upload button. Mobile: hidden (FAB below) */}
+          {!isMobile && (
+            <button
+              onClick={() => navigate('/upload')}
+              className="flex items-center gap-2 h-10 px-4 bg-primary rounded-lg"
+            >
+              <Upload className="w-4 h-4 text-white" />
+              <span className="text-[13px] font-semibold text-white">
+                Upload Bill
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -414,8 +472,8 @@ export default function DashboardPage() {
         );
       })()}
 
-      {/* Metric Cards */}
-      <div className="flex gap-4">
+      {/* Metric Cards — 2x2 on mobile, 4 in row on tablet+ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {loading ? (
           <>
             <MetricCardSkeleton />
@@ -457,17 +515,17 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Content Row */}
-      <div className="flex gap-6 flex-1">
+      {/* Content Row — stacked on mobile, side-by-side on tablet+ */}
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 flex-1">
         {/* Bill List */}
-        <div className="flex flex-col gap-4 flex-1">
-          {/* Category Tabs */}
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-4 flex-1 min-w-0">
+          {/* Category Tabs — horizontal scrollable on mobile */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveTab(cat)}
-                className={`px-3.5 h-[34px] rounded-full text-xs font-medium transition-colors ${
+                className={`px-3 sm:px-3.5 h-9 sm:h-[34px] rounded-full text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                   activeTab === cat
                     ? 'bg-primary text-white font-semibold'
                     : 'bg-bg-card border border-border text-text-secondary'
@@ -480,13 +538,13 @@ export default function DashboardPage() {
 
           {/* Sort Row */}
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-text-secondary">
+            <span className="text-[12px] sm:text-[13px] text-text-secondary">
               {loading ? 'Loading...' : `Showing ${filteredBills.length} bills`}
             </span>
           </div>
 
           {/* Bills */}
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2 sm:gap-2.5">
             {loading ? (
               <>
                 <BillRowSkeleton />
@@ -512,11 +570,22 @@ export default function DashboardPage() {
                 />
               ))
             )}
+
+            {/* Load More */}
+            {hasMore && filteredBills.length > 0 && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="w-full py-3 text-sm font-medium text-primary hover:bg-bg-card rounded-lg border border-border transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading...' : 'Load More'}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="w-[340px] flex flex-col gap-5 shrink-0">
+        {/* Right Sidebar — hidden on mobile (chart shown below), visible on tablet+ */}
+        <div className="hidden sm:flex w-full sm:w-[280px] lg:w-[340px] flex-col gap-5 shrink-0">
           {/* Spending Overview */}
           <div className="bg-bg-card rounded-xl border border-border p-5">
             <h3 className="font-heading text-base font-semibold text-text-primary mb-4">
@@ -577,7 +646,63 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Mobile: chart below bills */}
+        {isMobile && !loading && chartData.length > 0 && (
+          <div className="bg-bg-card rounded-xl border border-border p-5">
+            <h3 className="font-heading text-base font-semibold text-text-primary mb-4">
+              Spending Overview
+            </h3>
+            <div className="flex flex-col items-center">
+              <ResponsiveContainer width={180} height={180}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {chartData.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={CATEGORY_COLORS[entry.name] || '#6B7280'}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-col gap-2.5 w-full mt-4">
+                {chartData.map((cat) => {
+                  const pct = totalSpent > 0 ? Math.round((cat.value / totalSpent) * 100) : 0;
+                  return (
+                    <div key={cat.name} className="flex items-center gap-2">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: CATEGORY_COLORS[cat.name] || '#6B7280' }}
+                      />
+                      <span className="text-xs text-text-secondary flex-1">{cat.name}</span>
+                      <span className="text-xs font-medium text-text-primary">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Mobile: Floating Action Button for upload */}
+      {isMobile && (
+        <button
+          onClick={() => navigate('/upload')}
+          className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-primary text-white shadow-lg shadow-primary/30 flex items-center justify-center"
+        >
+          <Upload className="w-6 h-6" />
+        </button>
+      )}
 
       {lightboxImage && (
         <ImageLightbox

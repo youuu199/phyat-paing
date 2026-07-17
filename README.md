@@ -1,8 +1,8 @@
-# 🧾 Pyat Paing (ဖြတ်ပိုင်း) — AI-Powered Bill Organizer
+# 🧾 Phyat Paing (ဖြတ်ပိုင်း) — AI-Powered Bill Organizer
 
 ## 📖 Description
 
-Pyat Paing (ဖြတ်ပိုင်း) is a full-stack MERN web app for managing utility bills. Upload a photo of any bill — electricity, water, internet, phone, or shopping receipt — and the app automatically extracts the data using OCR and AI, converts currencies in real-time, and displays everything on a filterable dashboard with spending analytics.
+Phyat Paing (ဖြတ်ပိုင်း) is a full-stack MERN web app for managing utility bills. Upload a photo of any bill — electricity, water, internet, phone, or shopping receipt — and the app automatically extracts the data using OCR and AI, converts currencies in real-time, and displays everything on a filterable dashboard with spending analytics.
 
 **Built for Myanmar** — handles YESB electricity bills, YCDC water bills, MPT/Ooredoo phone bills, and more. OCR supports both Myanmar (Burmese) and English text, offline via Tesseract.js. Bills in any currency (USD, EUR, GBP, JPY, THB) are auto-detected and converted to MMK for storage, then displayed in your preferred currency using live exchange rates.
 
