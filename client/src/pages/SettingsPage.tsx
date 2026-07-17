@@ -265,9 +265,17 @@ export default function SettingsPage() {
                   <button
                     key={opt.value}
                     className={`theme-option ${settings.theme === opt.value ? 'active' : ''}`}
-                    onClick={() => {
+                    onClick={async () => {
                       setSettings(prev => ({ ...prev, theme: opt.value }));
                       setGlobalTheme(opt.value);
+                      // Auto-save to backend
+                      try {
+                        await apiFetch('/api/v1/users/settings', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ theme: opt.value }),
+                        });
+                      } catch { /* silent */ }
                     }}
                   >
                     <span className="theme-icon">{opt.icon}</span>
