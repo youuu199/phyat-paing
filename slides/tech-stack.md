@@ -3,10 +3,13 @@
   Dark theme, high contrast, big type.
   Render:  marp slides/tech-stack.md -o slides.html
 -->
+
 ---
+
 marp: true
 paginate: true
 size: 16:9
+
 ---
 
 <style>
@@ -26,9 +29,30 @@ ul { font-weight:600; }
 code { background:var(--code); color:var(--accent); padding:.05em .3em; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:.85em; }
 pre  { background:var(--code); border:1px solid #222; border-radius:10px; padding:.6em 1em; }
 pre code { background:none; color:#fafafa; padding:0; font-size:.7em; line-height:1.5; }
-table { font-size:.78em; border-collapse:collapse; width:100%; }
-th { color:var(--accent); background:#1a1a1a; border-bottom:2px solid #444; padding:7px 12px; text-align:left; }
-td { color:var(--ink); background:transparent; border-bottom:1px solid #333; padding:7px 12px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #111;
+}
+
+th {
+  background: #1a1a1a;
+  color: var(--accent);
+}
+
+td {
+  background: #111;
+  color: #fafafa;
+}
+
+tr:nth-child(even) td {
+  background: #181818;
+}
+
+th, td {
+  padding: 10px 14px;
+  border: 1px solid #333;
+}
 blockquote { border-left:5px solid var(--accent); color:var(--muted); padding:.3em .8em; margin:0; }
 header,footer,section::after { color:#525252; font-size:.5em; }
 section.cover { background:linear-gradient(135deg,#0a0a0a 0%, #1a1500 100%); }
@@ -67,17 +91,17 @@ section.lead h2 { font-size:1.6em; }
 
 # The stack
 
-| Layer | What | Why |
-|---|---|---|
-| **Frontend** | React 19 + TS + Vite | Fast HMR, lazy routes |
-| **Styling** | Tailwind CSS v4 | Utility-first responsive |
-| **Backend** | Express 5 | Async error handling built-in |
-| **Database** | MongoDB + Mongoose 9 | Document store, aggregations |
-| **OCR** | Tesseract.js (eng+mya) | Free, offline, in-process |
-| **AI** | Cohere Command A | Structured JSON with schema |
-| **Storage** | Cloudinary | CDN, auto-format, optimization |
-| **Auth** | JWT + httpOnly cookies | XSS-safe (no JS access to token) |
-| **Security** | Helmet, rate-limit, CORS | OWASP basics, prod-hardened |
+| Layer        | What                     | Why                              |
+| ------------ | ------------------------ | -------------------------------- |
+| **Frontend** | React 19 + TS + Vite     | Fast HMR, lazy routes            |
+| **Styling**  | Tailwind CSS v4          | Utility-first responsive         |
+| **Backend**  | Express 5                | Async error handling built-in    |
+| **Database** | MongoDB + Mongoose 9     | Document store, aggregations     |
+| **OCR**      | Tesseract.js (eng+mya)   | Free, offline, in-process        |
+| **AI**       | Cohere Command A         | Structured JSON with schema      |
+| **Storage**  | Cloudinary               | CDN, auto-format, optimization   |
+| **Auth**     | JWT + httpOnly cookies   | XSS-safe (no JS access to token) |
+| **Security** | Helmet, rate-limit, CORS | OWASP basics, prod-hardened      |
 
 ---
 
@@ -139,12 +163,12 @@ Four specialized subagents — dispatched by Claude Code when needed.
 
 # Agent roster
 
-| Agent | Model | Color | Focus |
-|---|---|---|---|
-| **mern-reviewer** | Sonnet | 🔴 | Anti-pattern detection (Mongoose, Cloudinary, Cohere, Tesseract) |
-| **pipeline-debugger** | Sonnet | 🟡 | Stage-by-stage pipeline failure isolation |
-| **backend-db-specialist** | Sonnet | 🔵 | Express routing, schemas, aggregations |
-| **ai-ocr-specialist** | Sonnet | 🟢 | OCR tuning, Cohere prompts, Myanmar text |
+| Agent                     | Model  | Color | Focus                                                            |
+| ------------------------- | ------ | ----- | ---------------------------------------------------------------- |
+| **mern-reviewer**         | Sonnet | 🔴    | Anti-pattern detection (Mongoose, Cloudinary, Cohere, Tesseract) |
+| **pipeline-debugger**     | Sonnet | 🟡    | Stage-by-stage pipeline failure isolation                        |
+| **backend-db-specialist** | Sonnet | 🔵    | Express routing, schemas, aggregations                           |
+| **ai-ocr-specialist**     | Sonnet | 🟢    | OCR tuning, Cohere prompts, Myanmar text                         |
 
 **Architecture:** Each agent has scoped tools (Glob, Grep, Read, Bash, Context7), explicit model assignment, color identity, and a clear purpose description for automatic dispatch.
 
@@ -167,6 +191,7 @@ behavior:
 ```
 
 **Sample output:**
+
 ```
 🔴 server/src/utils/cloudinaryStorage.js:17
    upload() with Buffer → Use upload_stream() wrapped in Promise
@@ -186,13 +211,13 @@ Isolates **which stage** of the upload pipeline failed — saves hours of manual
 
 **Failure signature table:**
 
-| Error | Stage | Cause |
-|---|---|---|
-| `req.file is undefined` | 1 — Multer | Config wrong |
-| `upload_stream timeout` | 2 — Cloudinary | Buffer > 10MB or API down |
-| No text extracted | 3 — Tesseract | Wrong language code or image quality |
-| JSON parse error | 4 — Cohere | Thinking blocks in response — find `.type === 'text'` |
-| `MongooseServerSelectionError` | 5 — MongoDB | DB unreachable |
+| Error                          | Stage          | Cause                                                 |
+| ------------------------------ | -------------- | ----------------------------------------------------- |
+| `req.file is undefined`        | 1 — Multer     | Config wrong                                          |
+| `upload_stream timeout`        | 2 — Cloudinary | Buffer > 10MB or API down                             |
+| No text extracted              | 3 — Tesseract  | Wrong language code or image quality                  |
+| JSON parse error               | 4 — Cohere     | Thinking blocks in response — find `.type === 'text'` |
+| `MongooseServerSelectionError` | 5 — MongoDB    | DB unreachable                                        |
 
 Each failure → **root cause** → **exact fix** → **verification step**
 
@@ -208,14 +233,14 @@ Six packaged workflows — one slash command each.
 
 # Skill reference
 
-| Command | What it does |
-|---|---|
-| `/setup-env` | Interactive .env config — walks through all 10+ vars |
-| `/db-seed` | Seeds MongoDB with 12 realistic test bills |
-| `/test-pipeline` | End-to-end test: upload → Cloudinary → Tesseract → Cohere → DB |
-| `/code-review` | Grep-checks changed files for 13 anti-patterns |
-| `/extract-categorize-bill` | Standalone Cohere classification — debug AI without full pipeline |
-| `/upload-cloudinary-storage` | Test multer → Cloudinary in isolation |
+| Command                      | What it does                                                      |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `/setup-env`                 | Interactive .env config — walks through all 10+ vars              |
+| `/db-seed`                   | Seeds MongoDB with 12 realistic test bills                        |
+| `/test-pipeline`             | End-to-end test: upload → Cloudinary → Tesseract → Cohere → DB    |
+| `/code-review`               | Grep-checks changed files for 13 anti-patterns                    |
+| `/extract-categorize-bill`   | Standalone Cohere classification — debug AI without full pipeline |
+| `/upload-cloudinary-storage` | Test multer → Cloudinary in isolation                             |
 
 All live inside `.claude/skills/<name>/SKILL.md` — trigger, prerequisites, usage, verification.
 
@@ -268,7 +293,7 @@ Phase 5 — Polish & Deploy
   » Production hardening (Helmet, rate limits, timeouts)
 ```
 
-**Principle:** *Every library integration verified against live docs — not from memory.*
+**Principle:** _Every library integration verified against live docs — not from memory._
 
 ---
 
@@ -280,16 +305,16 @@ Phase 5 — Polish & Deploy
 
 # MCP tools used
 
-| Tool | Role |
-|---|---|
-| **Claude Code (Sonnet/Opus)** | Primary pair programmer — code, debug, architecture |
-| **Superpowers SDD** | Phase methodology — Phase 0→5 structure |
-| **Context7 MCP** | Live docs for Express 5, Mongoose 9, Cohere v2, Tesseract.js |
-| **21st.dev MCP** | Generated & refined UI (uploader, cards, modals, theme toggle) |
-| **Chrome DevTools MCP** | Screenshots at 1280×800, responsive tests, Lighthouse audits |
-| **claude-mem MCP** | Persistent session memory across sessions |
-| **GSD Framework** | Planning, review, verification workflow |
-| **MongoDB MCP** | DB inspection — schema, indexes, aggregations |
+| Tool                          | Role                                                           |
+| ----------------------------- | -------------------------------------------------------------- |
+| **Claude Code (Sonnet/Opus)** | Primary pair programmer — code, debug, architecture            |
+| **Superpowers SDD**           | Phase methodology — Phase 0→5 structure                        |
+| **Context7 MCP**              | Live docs for Express 5, Mongoose 9, Cohere v2, Tesseract.js   |
+| **21st.dev MCP**              | Generated & refined UI (uploader, cards, modals, theme toggle) |
+| **Chrome DevTools MCP**       | Screenshots at 1280×800, responsive tests, Lighthouse audits   |
+| **claude-mem MCP**            | Persistent session memory across sessions                      |
+| **GSD Framework**             | Planning, review, verification workflow                        |
+| **MongoDB MCP**               | DB inspection — schema, indexes, aggregations                  |
 
 ---
 
@@ -297,12 +322,12 @@ Phase 5 — Polish & Deploy
 
 **Automatic (agents dispatch by intent):**
 
-| Agent | Trigger phrase |
-|---|---|
-| `mern-reviewer` | "review", "check for bugs", "audit" |
-| `pipeline-debugger` | "upload failed", "pipeline broken", Cohere/Tesseract errors |
-| `backend-db-specialist` | "schemas", "routes", "aggregations", "Mongoose" |
-| `ai-ocr-specialist` | "OCR", "Cohere", "Myanmar text" |
+| Agent                   | Trigger phrase                                              |
+| ----------------------- | ----------------------------------------------------------- |
+| `mern-reviewer`         | "review", "check for bugs", "audit"                         |
+| `pipeline-debugger`     | "upload failed", "pipeline broken", Cohere/Tesseract errors |
+| `backend-db-specialist` | "schemas", "routes", "aggregations", "Mongoose"             |
+| `ai-ocr-specialist`     | "OCR", "Cohere", "Myanmar text"                             |
 
 **Manual (skills via slash command):**
 
