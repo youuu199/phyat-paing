@@ -83,255 +83,305 @@ section.lead h2 { font-size:1.6em; }
 
 ## AI-Powered Bill Organizer
 
-**Tech Stack · Agents · Skills · Methodology**
+**Upload. OCR. Classify. Track. Export.**
 
 ---
 
-<!-- _class: lead -->
+# The Problem
 
-# The stack
+Households and small businesses manage bills through scattered channels:
 
-| Layer        | What                     | Why                              |
-| ------------ | ------------------------ | -------------------------------- |
-| **Frontend** | React 19 + TS + Vite     | Fast HMR, lazy routes            |
-| **Styling**  | Tailwind CSS v4          | Utility-first responsive         |
-| **Backend**  | Express 5                | Async error handling built-in    |
-| **Database** | MongoDB + Mongoose 9     | Document store, aggregations     |
-| **OCR**      | Tesseract.js (eng+mya)   | Free, offline, in-process        |
-| **AI**       | Cohere Command A         | Structured JSON with schema      |
-| **Storage**  | Cloudinary               | CDN, auto-format, optimization   |
-| **Auth**     | JWT + httpOnly cookies   | XSS-safe (no JS access to token) |
-| **Security** | Helmet, rate-limit, CORS | OWASP basics, prod-hardened      |
+- Paper receipts stuffed in drawers
+- Utility bill emails buried in inboxes
+- Photos of invoices on phone galleries
+- Spreadsheets that never get updated
+
+**Result:** Missed due dates, no spending visibility, manual data entry nightmares.
 
 ---
 
-# Why these choices
+# The Solution
 
-<div class="two-col">
-<div>
+A centralized platform that streamlines the entire bill workflow:
 
-### 🆓 Free / Offline
-
-- **Tesseract.js** — no API costs, works fully offline
-- **open.er-api.com** — live exchange rates, no key needed
-- **MongoDB Atlas** — generous free tier
-
-### 🔒 Security-First
-
-- **httpOnly cookies** — can't steal token via JS
-- **Helmet** + rate limiting + account lockout
-
-</div>
-<div>
-
-### 🤖 AI Pipeline
-
-- **Cohere Command A** — structured JSON with schema validation, cheaper than GPT-4
-- **Cloudinary** — image optimization + CDN delivery
-
-### 🏗️ Modern
-
-- **Vite + React 19** — fast dev, lazy routes
-- **Express 5** — latest, async-safe
-- **Mongoose 9** — modern API, no deprecated opts
-
-</div>
-</div>
+- **Upload** — Snap a photo or upload any bill image
+- **Extract** — OCR reads text automatically (English + Myanmar)
+- **Classify** — AI identifies amount, category, and vendor
+- **Track** — Dashboard with filters, charts, and payment status
+- **Export** — CSV or PDF for accounting
 
 ---
 
-# Data flow
+# Core Features
+
+| Feature | Description |
+|---------|-------------|
+| Bill Upload | Drag-and-drop image upload with progress stages |
+| OCR Engine | Tesseract.js extracts text from bills (eng+mya) |
+| AI Classification | Cohere Command A classifies amount, category, vendor |
+| Dashboard | Filterable bill list with search, sort, and pagination |
+| Analytics | Spending overview donut chart + monthly trend line chart |
+| Payment Tracking | Mark bills paid/unpaid with date stamps |
+| Recurring Bills | Auto-creation of monthly/quarterly/yearly bills via cron |
+| Multi-Currency | Live exchange rates via open.er-api.com |
+| Export | CSV and PDF export for accounting |
+| Dark Mode | Theme toggle with system preference detection |
+
+---
+
+# Architecture
 
 ```
-📸 Upload → ☁️ Cloudinary → 👁️ Tesseract → 🤖 Cohere → 🗄️ MongoDB
-   multer      upload_stream   scheduler       V2 client    user-scoped
-   memory      wrapped in      worker pool     response     bills only
-   storage     p-retry         (3 workers)     Format.JSON
-```
-
-Every stage has retry logic. Each stage can be tested in isolation via skills.
-
----
-
-<!-- _class: lead -->
-
-# Agents
-
-Four specialized subagents — dispatched by Claude Code when needed.
-
----
-
-# Agent roster
-
-| Agent                     | Model  | Color | Focus                                                            |
-| ------------------------- | ------ | ----- | ---------------------------------------------------------------- |
-| **mern-reviewer**         | Sonnet | 🔴    | Anti-pattern detection (Mongoose, Cloudinary, Cohere, Tesseract) |
-| **pipeline-debugger**     | Sonnet | 🟡    | Stage-by-stage pipeline failure isolation                        |
-| **backend-db-specialist** | Sonnet | 🔵    | Express routing, schemas, aggregations                           |
-| **ai-ocr-specialist**     | Sonnet | 🟢    | OCR tuning, Cohere prompts, Myanmar text                         |
-
-**Architecture:** Each agent has scoped tools (Glob, Grep, Read, Bash, Context7), explicit model assignment, color identity, and a clear purpose description for automatic dispatch.
-
----
-
-# Agent deep-dive — mern-reviewer
-
-```
-─── .claude/agents/mern-reviewer.md ───
-
-model: sonnet     ← dedicated model
-color: red        ← visible identity
-tools: Glob, Grep, Read, Bash, Context7
-
-behavior:
-├── runs 13 grep patterns for known anti-patterns
-├── checks all changed files against Allowed APIs
-├── scores findings ≥ 80% confidence
-└── never reports style — only verifiable bugs
-```
-
-**Sample output:**
-
-```
-🔴 server/src/utils/cloudinaryStorage.js:17
-   upload() with Buffer → Use upload_stream() wrapped in Promise
-
-🟡 server/src/controllers/billController.js:42
-   Missing returnDocument:'after' on findByIdAndUpdate
-
-🟢 Cohere: CohereClientV2 + responseFormat.jsonSchema ✅
-🟢 Tesseract: createScheduler() with 3 workers ✅
+┌──────────┐     ┌──────────────────────────────────┐     ┌──────────┐
+│  Vite +  │────▶│         Express 5 API             │────▶│ MongoDB  │
+│  React   │     │  /api/v1/* — versioned routes     │     │ Atlas    │
+│   :5173  │     │  JWT auth — httpOnly cookies       │     │          │
+└──────────┘     │  Multer — memoryStorage            │     └──────────┘
+       ▲         │  Rate-limited — Helmet secured     │
+       │         └──────────┬──────────┬──────────────┘
+       │                    │          │
+       │         ┌──────────▼──┐ ┌─────▼───────────┐
+       │         │ Cloudinary  │ │ Tesseract.js    │
+       │         │ Image CDN   │ │ OCR (eng+mya)   │
+       │         └─────────────┘ └─────┬───────────┘
+       │                               │
+       │                     ┌─────────▼──────────┐
+       │                     │ Cohere Command A   │
+       │                     │ JSON classification│
+       │                     └────────────────────┘
+       │
+  ┌────┴───────┐
+  │ Proxy Vite │  /api/* → localhost:5000
+  └────────────┘
 ```
 
 ---
 
-# Agent deep-dive — pipeline-debugger
+# Data Pipeline
 
-Isolates **which stage** of the upload pipeline failed — saves hours of manual debugging.
-
-**Failure signature table:**
-
-| Error                          | Stage          | Cause                                                 |
-| ------------------------------ | -------------- | ----------------------------------------------------- |
-| `req.file is undefined`        | 1 — Multer     | Config wrong                                          |
-| `upload_stream timeout`        | 2 — Cloudinary | Buffer > 10MB or API down                             |
-| No text extracted              | 3 — Tesseract  | Wrong language code or image quality                  |
-| JSON parse error               | 4 — Cohere     | Thinking blocks in response — find `.type === 'text'` |
-| `MongooseServerSelectionError` | 5 — MongoDB    | DB unreachable                                        |
-
-Each failure → **root cause** → **exact fix** → **verification step**
-
----
-
-<!-- _class: lead -->
-
-# Skills
-
-Six packaged workflows — one slash command each.
-
----
-
-# Skill reference
-
-| Command                      | What it does                                                      |
-| ---------------------------- | ----------------------------------------------------------------- |
-| `/setup-env`                 | Interactive .env config — walks through all 10+ vars              |
-| `/db-seed`                   | Seeds MongoDB with 12 realistic test bills                        |
-| `/test-pipeline`             | End-to-end test: upload → Cloudinary → Tesseract → Cohere → DB    |
-| `/code-review`               | Grep-checks changed files for 13 anti-patterns                    |
-| `/extract-categorize-bill`   | Standalone Cohere classification — debug AI without full pipeline |
-| `/upload-cloudinary-storage` | Test multer → Cloudinary in isolation                             |
-
-All live inside `.claude/skills/<name>/SKILL.md` — trigger, prerequisites, usage, verification.
-
----
-
-# Skill deep-dive — code-review
+Every upload flows through a 5-stage pipeline with retry logic at each step:
 
 ```
-─── .claude/skills/code-review/SKILL.md ───
-
-Trigger:  "review my code" or /code-review
-What:     Scans all changed files for anti-patterns
-
-Checklist: 13 grep patterns:
-  - Mongoose deprecated options          → server/src/
-  - Cloudinary upload() vs upload_stream → server/src/
-  - CohereClient vs CohereClientV2       → server/src/
-  - Missing userId filter on bills       → server/src/
-  - Hardcoded Tesseract cache path       → server/src/
-  - Cohere content[0].text (find by type)→ server/src/
-  - ...and 7 more
-
-Output:   File:line findings with exact fix code
+📸 Upload ──▶ ☁️ Cloudinary ──▶ 👁️ Tesseract ──▶ 🤖 Cohere ──▶ 🗄️ MongoDB
+   multer       upload_stream     scheduler         V2 client      user-scoped
+   memory       wrapped in        worker pool       response       bills only
+   storage      p-retry           (3 workers)       Format.JSON
 ```
 
+**Validation gate (after Cohere):**
+- `amount <= 0` → Reject with 422 + cleanup Cloudinary image
+- `title === 'Unknown Bill'` → Reject with 422 + cleanup Cloudinary image
+- Response includes `code: 'UNRECOGNIZED_BILL'` for frontend alerts
+
+---
+
+# Cloudinary Integration
+
+**Purpose:** Upload, store, and optimize bill images via CDN.
+
+```javascript
+// Upload from Buffer — NOT upload() which expects a file path
+const stream = cloudinary.uploader.upload_stream(options, (err, result) => {
+  if (err) return reject(err);
+  resolve(result);
+});
+stream.end(buffer);
+
+// Wrapped in p-retry (2 retries, 1s backoff)
+return pRetry(doUpload, { retries: 2, minTimeout: 1000 });
+```
+
+| Feature | Detail |
+|---------|--------|
+| Storage | Bill images stored securely, auto-optimized |
+| Deletion | Images cleaned up on bill delete or pipeline rejection |
+| Security | Credentials via env vars, never committed |
+
+---
+
+# OCR Engine — Tesseract.js
+
+**Purpose:** Extract raw text from bill images — fully free and offline.
+
+```
+┌──────────┐     ┌──────────┐     ┌──────────┐
+│ Worker 1 │     │ Worker 2 │     │ Worker 3 │
+│ eng+mya  │     │ eng+mya  │     │ eng+mya  │
+└─────┬────┘     └─────┬────┘     └─────┬────┘
+      └───────────────┬┘────────────────┘
+                      │
+           ┌──────────▼──────────┐
+           │  createScheduler()  │  ← concurrent-safe
+           │  scheduler.addJob() │
+           └─────────────────────┘
+```
+
+- 3-worker pool via `createScheduler()` — avoids serialized single-worker blocking
+- Supports Myanmar + English text in the same image (`eng+mya`)
+- Cache path uses `os.tmpdir()` for portability
+
+---
+
+# AI Classification — Cohere Command A
+
+**Purpose:** Parse raw OCR text into structured bill data.
+
+```
+Input:  "Electric Bill - Yangon - 45,000 MMK - Due 15/06/2026"
+
+Output: {
+  "title":    "Electric Bill",
+  "amount":   45000,
+  "category": "Electricity",
+  "dueDate":  "2026-06-15"
+}
+```
+
+| Detail | Value |
+|--------|-------|
+| Model | `command-a-plus-05-2026` (env-configurable) |
+| Client | `CohereClientV2` (v2, not v1) |
+| Schema | `responseFormat.jsonSchema` enforces structure |
+| Retry | `p-retry` with 2 retries |
+| Caching | Client cached at module level — never created per request |
+
+---
+
+# Authentication & Security
+
+**JWT in httpOnly cookies — XSS-safe by design.**
+
+```
+Login ──▶ Set-Cookie: token=<jwt>; httpOnly; Secure; SameSite=Lax
+                                                   └── JS can't read it
+Request ──▶ Cookie header ──▶ jwt.verify() ──▶ req.userId
+```
+
+| Measure | Detail |
+|---------|--------|
+| httpOnly Cookies | Token inaccessible to JavaScript — defeats XSS |
+| Authorization Header | Fallback for mobile/non-browser clients |
+| Account Lockout | 5 failed attempts → 15-minute lockout |
+| Rate Limiting | Auth: 20/15min · Upload: 10/min |
+| Helmet | Security headers (CSP, HSTS, X-Frame-Options) |
+| Password Policy | Min 8 chars, at least one number |
+| CORS | Strict origin in production |
+| Error Sanitization | Generic messages in production (no stack leaks) |
+
+---
+
+# Agent System
+
+Four specialized subagents — dispatched by Claude Code when the task matches their focus.
+
+| Agent | Color | Model | Focus |
+|-------|-------|-------|-------|
+| **mern-reviewer** | 🔴 | Sonnet | Anti-pattern detection — 13 grep patterns |
+| **pipeline-debugger** | 🟡 | Sonnet | Stage-by-stage pipeline failure isolation |
+| **backend-db-specialist** | 🔵 | Sonnet | Express routing, schemas, aggregations |
+| **ai-ocr-specialist** | 🟢 | Sonnet | OCR tuning, Cohere prompts, Myanmar text |
+
+**Trigger phrases:**
+- `mern-reviewer` → "review", "check for bugs", "audit"
+- `pipeline-debugger` → "upload failed", "pipeline broken"
+- `backend-db-specialist` → "schemas", "routes", "aggregations"
+- `ai-ocr-specialist` → "OCR", "Cohere", "Myanmar text"
+
+---
+
+# Skills — Packaged Workflows
+
+Six slash commands for common tasks:
+
+| Command | What it does |
+|---------|-------------|
+| `/setup-env` | Interactive .env configuration — all 10+ vars |
+| `/db-seed` | Seeds MongoDB with 12 realistic test bills |
+| `/test-pipeline` | End-to-end: upload → Cloudinary → OCR → AI → DB |
+| `/code-review` | Grep-checks changed files for 13 anti-patterns |
+| `/extract-categorize-bill` | Standalone Cohere classification debug |
+| `/upload-cloudinary-storage` | Test multer → Cloudinary in isolation |
+
+---
+
+# Quality Gates
+
+```
+main ← feature branches
+
+Every commit must pass:
+  ✅ Context7 docs resolved before new library
+  ✅ Anti-pattern grep returns nothing
+  ✅ No .env / API keys / service accounts committed
+  ✅ try/catch on every async call
+  ✅ All bills scoped to userId (no data leaks)
+  ✅ Pipeline validation — reject amount=0 / Unknown Bill
+```
+
+**Pre-commit checklist** (run via `/code-review`):
 ```bash
-# Run it:
-/code-review
-# → 🔴 server/src/utils/cloudinaryStorage.js:17 — upload() with Buffer
+grep -rn "useNewUrlParser\|useUnifiedTopology" server/src/
+grep -rn "cloudinary\.uploader\.upload" server/src/
+grep -rn "content\[0\]\.text" server/src/
+grep -rn "localhost:27017" server/src/
 ```
 
 ---
 
-# Methodology — SDD
+# MCP Toolchain
 
-**Spec-Driven Development** (from Superpowers) — five structured phases:
-
-```
-Phase 0 — Tech Discovery
-  » Exact package versions & Allowed APIs
-  » Anti-patterns identified before writing code
-
-Phase 1–4 — Incremental Feature Delivery
-  » One slice per phase
-  » Context7 docs before each new library
-  » Anti-pattern grep before each commit
-
-Phase 5 — Polish & Deploy
-  » Live URL on Vercel
-  » Production hardening (Helmet, rate limits, timeouts)
-```
-
-**Principle:** _Every library integration verified against live docs — not from memory._
+| Tool | Role |
+|------|------|
+| **Claude Code (Sonnet/Opus)** | Primary pair programmer |
+| **Superpowers SDD** | Phase methodology — Phase 0→5 |
+| **Context7 MCP** | Live docs for Express 5, Mongoose 9, Cohere v2 |
+| **21st.dev MCP** | Generated & refined UI components |
+| **Chrome DevTools MCP** | Screenshots, responsive tests, Lighthouse |
+| **claude-mem MCP** | Persistent session memory |
+| **GSD Framework** | Planning, review, verification |
+| **MongoDB MCP** | DB inspection — schema, indexes, aggregations |
 
 ---
 
-<!-- _class: lead -->
+# Future Roadmap
 
-# AI toolchain
-
----
-
-# MCP tools used
-
-| Tool                          | Role                                                           |
-| ----------------------------- | -------------------------------------------------------------- |
-| **Claude Code (Sonnet/Opus)** | Primary pair programmer — code, debug, architecture            |
-| **Superpowers SDD**           | Phase methodology — Phase 0→5 structure                        |
-| **Context7 MCP**              | Live docs for Express 5, Mongoose 9, Cohere v2, Tesseract.js   |
-| **21st.dev MCP**              | Generated & refined UI (uploader, cards, modals, theme toggle) |
-| **Chrome DevTools MCP**       | Screenshots at 1280×800, responsive tests, Lighthouse audits   |
-| **claude-mem MCP**            | Persistent session memory across sessions                      |
-| **GSD Framework**             | Planning, review, verification workflow                        |
-| **MongoDB MCP**               | DB inspection — schema, indexes, aggregations                  |
+| Phase | Feature |
+|-------|---------|
+| Phase 7 | Email notifications for upcoming bills |
+| Phase 8 | WhatsApp/Telegram bill alerts |
+| Phase 9 | Mobile app (React Native or PWA) |
+| Phase 10 | Multi-user household accounts |
+| Phase 11 | Bank statement import + reconciliation |
+| Phase 12 | Budget forecasting with spending trends |
 
 ---
 
-# Triggers
+# Tech Stack
 
-**Automatic (agents dispatch by intent):**
+| Layer | Package | Why |
+|-------|---------|-----|
+| **Frontend** | Vite + React 19 + TS | Fast HMR, lazy routes |
+| **Styling** | Tailwind CSS v4 | Utility-first responsive |
+| **Backend** | Express 5 | Async-safe, latest |
+| **Database** | MongoDB + Mongoose 9 | Document store, aggregations |
+| **OCR** | Tesseract.js (eng+mya) | Free, offline, in-process |
+| **AI** | Cohere Command A | Structured JSON with schema |
+| **Image Storage** | Cloudinary | CDN, auto-optimization |
+| **Auth** | JWT + httpOnly cookies | XSS-safe |
+| **Security** | Helmet, rate-limit, CORS | OWASP basics |
+| **Logging** | Pino + pino-http | Structured JSON logs |
 
-| Agent                   | Trigger phrase                                              |
-| ----------------------- | ----------------------------------------------------------- |
-| `mern-reviewer`         | "review", "check for bugs", "audit"                         |
-| `pipeline-debugger`     | "upload failed", "pipeline broken", Cohere/Tesseract errors |
-| `backend-db-specialist` | "schemas", "routes", "aggregations", "Mongoose"             |
-| `ai-ocr-specialist`     | "OCR", "Cohere", "Myanmar text"                             |
+---
 
-**Manual (skills via slash command):**
+# Demo
 
-`/setup-env` `/db-seed` `/test-pipeline` `/code-review` `/extract-categorize-bill` `/upload-cloudinary-storage`
+1. **Open** the app at [phyat-paing.vercel.app](https://phyat-paing.vercel.app/)
+2. **Register** an account (or log in with test credentials)
+3. **Upload** a bill image — watch the pipeline progress
+4. **View** the classified result on the dashboard
+5. **Filter** by category, date range, or search
+6. **Toggle** payment status and set recurring intervals
+7. **Export** to CSV or PDF
 
 ---
 
@@ -346,55 +396,6 @@ cd server && node src/seed.js                 # Seed 12 test bills
 # ─── Inside Claude Code ────────────────────
 /setup-env    /db-seed    /code-review
 /test-pipeline   /extract-categorize-bill   /upload-cloudinary-storage
-
-# ─── Self-check before commit ──────────────
-grep -rn "useNewUrlParser\|useUnifiedTopology" server/src/
-grep -rn "cloudinary\.uploader\.upload" server/src/
-grep -rn "content\[0\]\.text" server/src/
-```
-
----
-
-# Workflow — putting it together
-
-```
-User: "Upload this bill"
-        │
-        ▼
-┌───────────────────────────────┐
-│  SDD — Phase methodology      │
-│  Context7 → docs → implement  │
-└──────┬────────────────────────┘
-       │
-       ├──▶ Claude Code (dev)
-       ├──▶ Agent dispatch
-       │      ├─ mern-reviewer
-       │      ├─ pipeline-debugger
-       │      ├─ backend-db-specialist
-       │      └─ ai-ocr-specialist
-       │
-       └──▶ External MCPs
-              ├─ Context7 (docs)
-              ├─ 21st.dev (UI)
-              ├─ MongoDB (DB)
-              ├─ Chrome (screenshots)
-              └─ claude-mem (memory)
-```
-
----
-
-# Quality gates
-
-```
-main ← feature branches
-
-Every commit must pass:
-  ✅ Context7 docs resolved before new library
-  ✅ Anti-pattern grep returns nothing
-  ✅ No .env / API keys / service accounts
-  ✅ try/catch on every async call
-  ✅ All bills scoped to userId (no data leaks)
-  ✅ Pipeline validation — reject amount=0 / Unknown Bill
 ```
 
 ---
@@ -417,4 +418,4 @@ Every commit must pass:
 
 [github.com/youuu199/phyat-paing](https://github.com/youuu199/phyat-paing) · [phyat-paing.vercel.app](https://phyat-paing.vercel.app/)
 
-Built with Claude Code · Superpowers · Context7 · 21st.dev
+**Built with** Claude Code · Superpowers · Context7 · 21st.dev
