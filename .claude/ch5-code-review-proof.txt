@@ -1,0 +1,27 @@
+## Code Review: Bill Organizer
+
+### Critical (must fix)
+- None found ✅
+
+### Warnings (should fix)
+- None found ✅
+
+### Clean (confirmed correct)
+
+**Mongoose:** No deprecated options (`useNewUrlParser`, `useUnifiedTopology`, etc.) — clean.
+**MongoDB host:** Uses 127.0.0.1:27017, not localhost — correct.
+**Cloudinary:** Uses `import { v2 as cloudinary } from 'cloudinary'` — correct.
+**Cloudinary upload:** Uses `upload_stream()` wrapped in Promise, not `upload()` with Buffer — correct.
+**Google Cloud Vision:** Not present — correct (uses Tesseract.js).
+**Cohere client:** Uses `CohereClientV2` — correct.
+**Cohere system role:** No system role messages — correct.
+**Cohere content[0].text:** Not used — finds by `.type === 'text'` — correct.
+**Cohere response_format:** Uses both `type: 'json_object'` AND `jsonSchema` — correct.
+**Mongoose new:true:** Not used — `returnDocument: 'after'` used instead — correct.
+**userId filter:** All bill queries scoped to `userId` — correct.
+**Pipeline validation:** `amount <= 0` and `Unknown Bill` rejected with 422 + UNRECOGNIZED_BILL code — correct.
+**Tesseract:** Uses `createScheduler()` with worker pool — correct.
+
+### Summary
+All 13 anti-pattern checks pass. The codebase is clean against the project's Allowed APIs.
+
