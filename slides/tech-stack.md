@@ -26,9 +26,9 @@ ul { font-weight:600; }
 code { background:var(--code); color:var(--accent); padding:.05em .3em; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:.85em; }
 pre  { background:var(--code); border:1px solid #222; border-radius:10px; padding:.6em 1em; }
 pre code { background:none; color:#fafafa; padding:0; font-size:.7em; line-height:1.5; }
-table { font-size:.8em; border-collapse:collapse; width:100%; }
-th { color:var(--accent); border-bottom:2px solid #333; padding:6px 10px; text-align:left; }
-td { border-bottom:1px solid #222; padding:6px 10px; }
+table { font-size:.78em; border-collapse:collapse; width:100%; }
+th { color:var(--accent); background:#1a1a1a; border-bottom:2px solid #444; padding:7px 12px; text-align:left; }
+td { color:var(--ink); background:transparent; border-bottom:1px solid #333; padding:7px 12px; }
 blockquote { border-left:5px solid var(--accent); color:var(--muted); padding:.3em .8em; margin:0; }
 header,footer,section::after { color:#525252; font-size:.5em; }
 section.cover { background:linear-gradient(135deg,#0a0a0a 0%, #1a1500 100%); }
