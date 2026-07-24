@@ -72,6 +72,10 @@ export default function UploadPage() {
           <span className="text-[12px] sm:text-[13px] text-text-secondary text-center px-4">
             Supports JPG, PNG, WebP · Max 10MB each · Upload multiple files
           </span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-text-muted">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+            Drag & drop anywhere above, or click "Browse Files" to select
+          </span>
           <div className="flex items-center gap-2 h-10 sm:h-11 px-5 rounded-lg border border-primary bg-bg-card">
             <FileImage className="w-4 h-4 text-primary" />
             <span className="text-[13px] font-medium text-primary">

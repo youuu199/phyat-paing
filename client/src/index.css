@@ -43,7 +43,7 @@
 
   --color-text-primary: #F1F5F9;
   --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
+  --color-text-muted: #94A3B8;
   --color-border: #334155;
 }
 
@@ -56,7 +56,7 @@
 
     --color-text-primary: #F1F5F9;
     --color-text-secondary: #94A3B8;
-    --color-text-muted: #64748B;
+    --color-text-muted: #94A3B8;
     --color-border: #334155;
   }
 }

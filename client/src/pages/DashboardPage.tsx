@@ -149,6 +149,7 @@ export default function DashboardPage() {
   } | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [monthlyTotal, setMonthlyTotal] = useState(0);
 
   const fetchBills = useCallback(async () => {
     try {
@@ -177,6 +178,23 @@ export default function DashboardPage() {
       } catch {
         // silently fail
       }
+    })();
+  }, [apiFetch]);
+
+  // Fetch current month spending for dashboard hero
+  useEffect(() => {
+    (async () => {
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const res = await apiFetch(`/api/v1/bills?year=${year}&month=${month}`);
+        if (res.ok) {
+          const data = await res.json();
+          const monthBills = data.bills || data || [];
+          setMonthlyTotal(monthBills.reduce((sum: number, b: Bill) => sum + b.amount, 0));
+        }
+      } catch { /* silently fail */ }
     })();
   }, [apiFetch]);
 
@@ -492,8 +510,8 @@ export default function DashboardPage() {
             />
             <MetricCard
               icon={Wallet}
-              label="Total Spent"
-              value={formatCurrency(totalSpent)}
+              label="This Month"
+              value={formatCurrency(monthlyTotal)}
               iconBg="bg-emerald-50"
               iconColor="text-success"
             />
