@@ -1,444 +1,388 @@
+<!--
+  Marp template — "pitch-bold"
+  Dark theme, high contrast, big type.
+  Render:  marp slides/tech-stack.md -o slides.html
+-->
 ---
 marp: true
 paginate: true
-transition: fade
 size: 16:9
-title: Phyat Paing — Tech Stack & AI Workflow
-style: |
-  :root {
-    --paper: #FAF5EA;
-    --paper-2: #F3ECDC;
-    --ink: #2B2622;
-    --ink-soft: #5C5247;
-    --primary: #4F46E5;
-    --primary-light: #818CF8;
-    --success: #10B981;
-    --warning: #F59E0B;
-    --danger: #EF4444;
-    --line: #E2D7C2;
-  }
-  section {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-    font-size: 26px;
-    line-height: 1.5;
-    padding: 64px 72px;
-  }
-  h1, h2, h3 {
-    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-    color: var(--ink);
-    letter-spacing: -0.01em;
-  }
-  h1 { font-size: 60px; line-height: 1.05; margin: 0 0 .2em; }
-  h2 { font-size: 40px; margin: 0 0 .5em; }
-  h2::after {
-    content: ""; display: block; width: 64px; height: 4px;
-    background: var(--primary); margin-top: 14px; border-radius: 2px;
-  }
-  h3 { font-size: 30px; margin: 0 0 .3em; }
-  strong { color: var(--primary); }
-  a { color: var(--primary); text-decoration: none; }
-  table { font-size: 22px; border-collapse: collapse; width: 100%; }
-  th { background: var(--paper-2); text-align: left; }
-  th, td { border: 1px solid var(--line); padding: 8px 14px; }
-  code {
-    background: var(--paper-2); color: var(--primary);
-    padding: 1px 7px; border-radius: 5px; font-size: 0.85em;
-  }
-  ul { margin-top: .2em; }
-  li { margin: .25em 0; }
-  section.lead { display: flex; flex-direction: column; justify-content: center; }
-  section.lead h1 { font-size: 72px; }
-  section.lead h2 { font-size: 36px; }
-  .tag {
-    display: inline-block; background: var(--primary); color: var(--paper);
-    font-size: 16px; font-weight: 600; letter-spacing: .08em;
-    text-transform: uppercase; padding: 4px 12px; border-radius: 999px;
-  }
-  .tag-sm {
-    display: inline-block; background: var(--paper-2); color: var(--primary);
-    font-size: 14px; font-weight: 600; padding: 2px 10px; border-radius: 999px;
-  }
-  .muted { color: var(--ink-soft); }
-  .two-col { display: flex; gap: 40px; }
-  .two-col > div { flex: 1; }
-  section.dark { background: #211D1A; color: #F3ECDC; }
-  section.dark h1, section.dark h2, section.dark h3 { color: #F3ECDC; }
-  section.dark strong { color: #818CF8; }
-  section.dark a { color: #818CF8; }
-  footer, header { color: var(--ink-soft); }
-  section::after { color: var(--ink-soft); }
-  .card {
-    background: var(--paper-2); border-radius: 12px; padding: 20px 28px; margin: 12px 0;
-  }
-  .flow-arrow { color: var(--ink-soft); font-size: 32px; text-align: center; margin: 4px 0; }
 ---
 
-<!-- _class: lead -->
-<!-- _paginate: false -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap');
+:root { --bg:#0a0a0a; --ink:#fafafa; --muted:#a3a3a3; --accent:#f0b429; --code:#171717; }
+section {
+  background:var(--bg); color:var(--ink);
+  font-family:'Inter','Noto Sans','Pyidaungsu',sans-serif;
+  font-size:28px; line-height:1.4; padding:60px 72px; font-weight:400;
+}
+h1 { color:var(--accent); font-weight:900; font-size:2em; line-height:1.05; letter-spacing:-.02em; }
+h2 { color:var(--ink); font-weight:700; font-size:1.35em; }
+h3 { color:var(--muted); font-weight:700; font-size:1.1em; }
+strong { color:var(--accent); }
+a { color:var(--accent); text-decoration:none; }
+ul { font-weight:600; }
+code { background:var(--code); color:var(--accent); padding:.05em .3em; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:.85em; }
+pre  { background:var(--code); border:1px solid #222; border-radius:10px; padding:.6em 1em; }
+pre code { background:none; color:#fafafa; padding:0; font-size:.7em; line-height:1.5; }
+table { font-size:.8em; border-collapse:collapse; width:100%; }
+th { color:var(--accent); border-bottom:2px solid #333; padding:6px 10px; text-align:left; }
+td { border-bottom:1px solid #222; padding:6px 10px; }
+blockquote { border-left:5px solid var(--accent); color:var(--muted); padding:.3em .8em; margin:0; }
+header,footer,section::after { color:#525252; font-size:.5em; }
+section.cover { background:linear-gradient(135deg,#0a0a0a 0%, #1a1500 100%); }
+section.cover h1 { font-size:3.2em; }
+section.lead { background:#111; }
+section.lead h1 { font-size:3em; }
+section.lead h2 { font-size:1.6em; }
+.tag {
+  display:inline-block; background:var(--accent); color:#0a0a0a;
+  font-size:14px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; padding:3px 10px; border-radius:999px;
+}
+.tag-sm {
+  display:inline-block; background:#222; color:var(--muted);
+  font-size:13px; font-weight:600; padding:2px 8px; border-radius:999px;
+}
+.muted { color:var(--muted); }
+.two-col { display:flex; gap:36px; }
+.two-col > div { flex:1; }
+.flow-arrow { color:var(--muted); font-size:28px; text-align:center; margin:6px 0; }
+.card { background:#111; border:1px solid #222; border-radius:10px; padding:16px 22px; margin:10px 0; }
+</style>
 
-<span class="tag">Chapter 5 — Tech Stack & AI Workflow</span>
+<!-- _class: cover -->
+<!-- _paginate: false -->
 
 # Phyat Paing
 
-### AI-Powered Bill Organizer
+## AI-Powered Bill Organizer
 
-<span class="muted">Tech Stack · Agents · Skills · Methodology · Triggers · Commands</span>
-
----
-
-## Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | React 19 + TypeScript + Vite | SPA with modern tooling |
-| **Styling** | Tailwind CSS v4 | Utility-first responsive UI |
-| **Charts** | Recharts | Spending analytics & donut charts |
-| **Backend** | Node.js + Express 5 | REST API with middleware pipeline |
-| **Database** | MongoDB Atlas + Mongoose 9 | Document storage, aggregations |
-| **ORM** | Mongoose 9 | Schema validation, queries |
-| **OCR** | Tesseract.js (eng+mya) | Offline text extraction from bill images |
-| **AI** | Cohere Command A | Structured JSON classification |
-| **Storage** | Cloudinary | Image hosting, CDN delivery |
-| **Currency** | open.er-api.com | Live exchange rates (free, no key) |
-| **Auth** | JWT + bcryptjs + httpOnly cookies | Secure authentication |
-| **Security** | Helmet, express-rate-limit, CORS | Production hardening |
+**Tech Stack · Agents · Skills · Methodology**
 
 ---
 
-## Tech Stack — Why These Choices
+<!-- _class: lead -->
+
+# The stack
+
+| Layer | What | Why |
+|---|---|---|
+| **Frontend** | React 19 + TS + Vite | Fast HMR, lazy routes |
+| **Styling** | Tailwind CSS v4 | Utility-first responsive |
+| **Backend** | Express 5 | Async error handling built-in |
+| **Database** | MongoDB + Mongoose 9 | Document store, aggregations |
+| **OCR** | Tesseract.js (eng+mya) | Free, offline, in-process |
+| **AI** | Cohere Command A | Structured JSON with schema |
+| **Storage** | Cloudinary | CDN, auto-format, optimization |
+| **Auth** | JWT + httpOnly cookies | XSS-safe (no JS access to token) |
+| **Security** | Helmet, rate-limit, CORS | OWASP basics, prod-hardened |
+
+---
+
+# Why these choices
 
 <div class="two-col">
 <div>
 
 ### 🆓 Free / Offline
 
-- **Tesseract.js** runs entirely in process — no API costs, no external service, works offline
-- **open.er-api.com** needs no API key
-- **MongoDB Atlas** has a generous free tier
+- **Tesseract.js** — no API costs, works fully offline
+- **open.er-api.com** — live exchange rates, no key needed
+- **MongoDB Atlas** — generous free tier
 
 ### 🔒 Security-First
 
-- **JWT in httpOnly cookies** — XSS-safe auth (can't steal token via JS)
-- **Helmet** + rate limiting — OWASP basics covered
+- **httpOnly cookies** — can't steal token via JS
+- **Helmet** + rate limiting + account lockout
+
 </div>
 <div>
 
 ### 🤖 AI Pipeline
 
-- **Cohere Command A** — structured JSON output with schema validation, cheaper than GPT-4
-- **Cloudinary** — handles image optimization, CDN, auto-format
+- **Cohere Command A** — structured JSON with schema validation, cheaper than GPT-4
+- **Cloudinary** — image optimization + CDN delivery
 
-### 🏗️ Modern Stack
+### 🏗️ Modern
 
-- **Vite + React 19** — fast HMR, lazy routes
-- **Express 5** — latest Express with async error handling
-- **Mongoose 9** — latest Mongoose with modern API (no deprecated options)
+- **Vite + React 19** — fast dev, lazy routes
+- **Express 5** — latest, async-safe
+- **Mongoose 9** — modern API, no deprecated opts
+
 </div>
 </div>
 
 ---
 
-## Project Agents
-
-Four specialized subagents, each with a specific color and focus:
-
-| Agent | Model | Color | Focus |
-|-------|-------|-------|-------|
-| **mern-reviewer** | Sonnet | 🔴 Red | Anti-pattern detection (Mongoose, Cloudinary, Cohere, Tesseract) |
-| **pipeline-debugger** | Sonnet | 🟡 Yellow | Stage-by-stage pipeline failure isolation |
-| **backend-db-specialist** | Sonnet | 🔵 Blue | Express routing, Mongoose schemas, aggregations, REST APIs |
-| **ai-ocr-specialist** | Sonnet | 🟢 Green | Tesseract.js OCR, Cohere prompt engineering, Myanmar text |
-
-### Agent Architecture
-
-Each agent has:
-- **`tools`** — scoped tool access (Glob, Grep, Read, Bash, Context7)
-- **`model`** — explicit model assignment
-- **`color`** — terminal output color for quick identification
-- **`description`** — clear purpose for Claude Code to dispatch correctly
-
----
-
-## Agent Deep Dive — mern-reviewer
-
-```
-─── .claude/agents/mern-reviewer.md ───
-│
-├── name: mern-reviewer
-├── model: sonnet     ← dedicated model, not default
-├── color: red        ← visible agent identity
-├── tools: Glob, Grep, Read, Bash, Context7
-│
-└── behavior:
-    ├── runs grep commands for 13 known anti-patterns
-    ├── checks all changed files against Allowed APIs
-    ├── scores every finding ≥ 80% confidence
-    └── never reports style preferences — only verifiable bugs
-```
-
-**Typical output:**
-```
-## MERN Review
-
-### 🔴 Critical
-- **server/src/utils/cloudinaryStorage.js:17** — `upload()` with Buffer.
-  Use `upload_stream()` wrapped in Promise.
-
-### 🟡 Warnings
-- **server/src/controllers/billController.js:42** — Missing `returnDocument: 'after'`.
-  `findByIdAndUpdate` with `new: true` works but is deprecated in Mongoose 7+.
-
-### 🟢 Confirmed Correct
-- Cohere: `CohereClientV2` with `responseFormat.jsonSchema` ✅
-- Tesseract: `createScheduler()` with worker pool ✅
-```
-
----
-
-## Agent Deep Dive — pipeline-debugger
-
-Isolates **which stage** of the upload pipeline failed — saves hours of manual testing.
+# Data flow
 
 ```
 📸 Upload → ☁️ Cloudinary → 👁️ Tesseract → 🤖 Cohere → 🗄️ MongoDB
-   Stage 1     Stage 2        Stage 3       Stage 4      Stage 5
+   multer      upload_stream   scheduler       V2 client    user-scoped
+   memory      wrapped in      worker pool     response     bills only
+   storage     p-retry         (3 workers)     Format.JSON
 ```
 
-### Failure Signature Table
+Every stage has retry logic. Each stage can be tested in isolation via skills.
+
+---
+
+<!-- _class: lead -->
+
+# Agents
+
+Four specialized subagents — dispatched by Claude Code when needed.
+
+---
+
+# Agent roster
+
+| Agent | Model | Color | Focus |
+|---|---|---|---|
+| **mern-reviewer** | Sonnet | 🔴 | Anti-pattern detection (Mongoose, Cloudinary, Cohere, Tesseract) |
+| **pipeline-debugger** | Sonnet | 🟡 | Stage-by-stage pipeline failure isolation |
+| **backend-db-specialist** | Sonnet | 🔵 | Express routing, schemas, aggregations |
+| **ai-ocr-specialist** | Sonnet | 🟢 | OCR tuning, Cohere prompts, Myanmar text |
+
+**Architecture:** Each agent has scoped tools (Glob, Grep, Read, Bash, Context7), explicit model assignment, color identity, and a clear purpose description for automatic dispatch.
+
+---
+
+# Agent deep-dive — mern-reviewer
+
+```
+─── .claude/agents/mern-reviewer.md ───
+
+model: sonnet     ← dedicated model
+color: red        ← visible identity
+tools: Glob, Grep, Read, Bash, Context7
+
+behavior:
+├── runs 13 grep patterns for known anti-patterns
+├── checks all changed files against Allowed APIs
+├── scores findings ≥ 80% confidence
+└── never reports style — only verifiable bugs
+```
+
+**Sample output:**
+```
+🔴 server/src/utils/cloudinaryStorage.js:17
+   upload() with Buffer → Use upload_stream() wrapped in Promise
+
+🟡 server/src/controllers/billController.js:42
+   Missing returnDocument:'after' on findByIdAndUpdate
+
+🟢 Cohere: CohereClientV2 + responseFormat.jsonSchema ✅
+🟢 Tesseract: createScheduler() with 3 workers ✅
+```
+
+---
+
+# Agent deep-dive — pipeline-debugger
+
+Isolates **which stage** of the upload pipeline failed — saves hours of manual debugging.
+
+**Failure signature table:**
 
 | Error | Stage | Cause |
-|-------|-------|-------|
-| `req.file is undefined` | 1 | Multer config wrong |
-| `upload_stream timeout` | 2 | Buffer > 10MB or API down |
-| No text extracted | 3 | Wrong language code or image quality |
-| JSON parse error | 4 | Cohere wrapped in thinking blocks — find `.type === 'text'` |
-| `MongooseServerSelectionError` | 5 | MongoDB unreachable |
+|---|---|---|
+| `req.file is undefined` | 1 — Multer | Config wrong |
+| `upload_stream timeout` | 2 — Cloudinary | Buffer > 10MB or API down |
+| No text extracted | 3 — Tesseract | Wrong language code or image quality |
+| JSON parse error | 4 — Cohere | Thinking blocks in response — find `.type === 'text'` |
+| `MongooseServerSelectionError` | 5 — MongoDB | DB unreachable |
 
-For each failure the agent produces: **root cause** → **exact code fix** → **verification step**.
-
----
-
-## Project Skills
-
-Six packaged skills / slash commands that encapsulate recurring workflows:
-
-| Skill (Slash Command) | What It Does |
-|-----------------------|-------------|
-| **`/bill-organizer:setup-env`** | Interactive .env configuration — walks through all 10+ variables |
-| **`/bill-organizer:db-seed`** | Seeds MongoDB with 12 realistic test bills across 6 categories |
-| **`/bill-organizer:test-pipeline`** | End-to-end test of upload → Cloudinary → Tesseract → Cohere → MongoDB |
-| **`/bill-organizer:code-review`** | Grep-checks changed files for 13 known anti-patterns |
-| **`/bill-organizer:extract-categorize-bill`** | Standalone Cohere classification — debug AI output without full pipeline |
-| **`/bill-organizer:upload-cloudinary-storage`** | Test multer → Cloudinary in isolation (verify credentials, upload_stream) |
-
-### Skill File Structure
-
-```
-.claude/skills/<name>/
-  └── SKILL.md     ← trigger, prerequisites, usage, verification
-```
+Each failure → **root cause** → **exact fix** → **verification step**
 
 ---
 
-## Skill Deep Dive — code-review
+<!-- _class: lead -->
+
+# Skills
+
+Six packaged workflows — one slash command each.
+
+---
+
+# Skill reference
+
+| Command | What it does |
+|---|---|
+| `/setup-env` | Interactive .env config — walks through all 10+ vars |
+| `/db-seed` | Seeds MongoDB with 12 realistic test bills |
+| `/test-pipeline` | End-to-end test: upload → Cloudinary → Tesseract → Cohere → DB |
+| `/code-review` | Grep-checks changed files for 13 anti-patterns |
+| `/extract-categorize-bill` | Standalone Cohere classification — debug AI without full pipeline |
+| `/upload-cloudinary-storage` | Test multer → Cloudinary in isolation |
+
+All live inside `.claude/skills/<name>/SKILL.md` — trigger, prerequisites, usage, verification.
+
+---
+
+# Skill deep-dive — code-review
 
 ```
 ─── .claude/skills/code-review/SKILL.md ───
 
-Trigger:  User says "review my code" or /bill-organizer:code-review
+Trigger:  "review my code" or /code-review
 What:     Scans all changed files for anti-patterns
-Checklist: 13 grep patterns covering:
-  - Mongoose deprecated options
-  - Cloudinary upload() vs upload_stream()
-  - Cohere CohereClient vs CohereClientV2
-  - Missing userId filter on bill queries
-  - Hardcoded Tesseract cache path
-  - Cohere content[0].text (should find by type)
+
+Checklist: 13 grep patterns:
+  - Mongoose deprecated options          → server/src/
+  - Cloudinary upload() vs upload_stream → server/src/
+  - CohereClient vs CohereClientV2       → server/src/
+  - Missing userId filter on bills       → server/src/
+  - Hardcoded Tesseract cache path       → server/src/
+  - Cohere content[0].text (find by type)→ server/src/
   - ...and 7 more
 
 Output:   File:line findings with exact fix code
 ```
 
-**Example run:**
 ```bash
-# In Claude Code, type:
+# Run it:
 /code-review
-
-# Output:
-# 🔴 server/src/utils/cloudinaryStorage.js:17 — upload() with Buffer
-# → Fix: Use upload_stream() wrapped in Promise
+# → 🔴 server/src/utils/cloudinaryStorage.js:17 — upload() with Buffer
 ```
 
 ---
 
-## Methodology — Spec-Driven Development (SDD)
+# Methodology — SDD
 
-The project follows **Spec-Driven Development** from **Superpowers** — a structured methodology:
+**Spec-Driven Development** (from Superpowers) — five structured phases:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Phase 0 — Tech Discovery                                 │
-│  » Document exact package versions & Allowed APIs         │
-│  » Identify anti-patterns before writing code             │
-├─────────────────────────────────────────────────────────┤
-│  Phase 1–4 — Incremental Feature Delivery                 │
-│  » Each phase adds one slice of functionality             │
-│  » Docs resolved via Context7 before each new library     │
-│  » Anti-pattern checklist run before each commit          │
-├─────────────────────────────────────────────────────────┤
-│  Phase 5 — Polish & Deploy                                │
-│  » Live URL on Vercel                                     │
-│  » Production hardening (Helmet, rate limits, timeouts)   │
-└─────────────────────────────────────────────────────────┘
+Phase 0 — Tech Discovery
+  » Exact package versions & Allowed APIs
+  » Anti-patterns identified before writing code
+
+Phase 1–4 — Incremental Feature Delivery
+  » One slice per phase
+  » Context7 docs before each new library
+  » Anti-pattern grep before each commit
+
+Phase 5 — Polish & Deploy
+  » Live URL on Vercel
+  » Production hardening (Helmet, rate limits, timeouts)
 ```
 
-**Key principle:** *Every library integration is verified against live docs before use, not from memory.*
+**Principle:** *Every library integration verified against live docs — not from memory.*
 
 ---
 
-## AI Tools & Workflow
+<!-- _class: lead -->
 
-All the AI tools used across the project:
-
-| Tool | What It Did |
-|------|------------|
-| **Claude Code (Sonnet/Opus)** | Primary AI pair programmer — code generation, debugging, architecture |
-| **Superpowers SDD** | Spec-Driven Development methodology — Phase 0→5 structure |
-| **Context7 MCP** | Fetched live docs for Express 5, Mongoose 9, Cohere v2 API, Tesseract.js |
-| **21st.dev MCP** | Generated and refined UI components (uploader, cards, modals, theme toggle) |
-| **Chrome DevTools MCP** | Screenshot capture at 1280×800, responsive testing, Lighthouse audits |
-| **claude-mem MCP** | Persistent session memory — remembers project decisions across sessions |
-| **GSD Framework** | Structured workflow with planning, review, and verification stages |
-| **MongoDB MCP** | Database inspection — schema validation, index creation, aggregation testing |
+# AI toolchain
 
 ---
 
-## Triggers — When Skills & Agents Activate
+# MCP tools used
 
-### Automatic Triggers (Agent)
-
-| Agent | Trigger |
-|-------|---------|
-| `mern-reviewer` | User asks "review", "check for bugs", or "audit" — Claude dispatches automatically based on description |
-| `pipeline-debugger` | User reports upload failure, "pipeline broken", or Cohere/Tesseract error |
-| `backend-db-specialist` | User asks about schemas, routes, aggregations, or Mongoose queries |
-| `ai-ocr-specialist` | User asks about OCR, Cohere classification, or Myanmar text handling |
-
-### Manual Triggers (Skill)
-
-| Skill | Trigger | How |
-|-------|---------|-----|
-| `setup-env` | User types | `/bill-organizer:setup-env` |
-| `db-seed` | User types | `/bill-organizer:db-seed` |
-| `test-pipeline` | User types | `/bill-organizer:test-pipeline` |
-| `code-review` | User types | `/bill-organizer:code-review` |
-| `extract-categorize-bill` | User types | `/bill-organizer:extract-categorize-bill` |
-| `upload-cloudinary-storage` | User types | `/bill-organizer:upload-cloudinary-storage` |
+| Tool | Role |
+|---|---|
+| **Claude Code (Sonnet/Opus)** | Primary pair programmer — code, debug, architecture |
+| **Superpowers SDD** | Phase methodology — Phase 0→5 structure |
+| **Context7 MCP** | Live docs for Express 5, Mongoose 9, Cohere v2, Tesseract.js |
+| **21st.dev MCP** | Generated & refined UI (uploader, cards, modals, theme toggle) |
+| **Chrome DevTools MCP** | Screenshots at 1280×800, responsive tests, Lighthouse audits |
+| **claude-mem MCP** | Persistent session memory across sessions |
+| **GSD Framework** | Planning, review, verification workflow |
+| **MongoDB MCP** | DB inspection — schema, indexes, aggregations |
 
 ---
 
-## Commands — Quick Reference
+# Triggers
+
+**Automatic (agents dispatch by intent):**
+
+| Agent | Trigger phrase |
+|---|---|
+| `mern-reviewer` | "review", "check for bugs", "audit" |
+| `pipeline-debugger` | "upload failed", "pipeline broken", Cohere/Tesseract errors |
+| `backend-db-specialist` | "schemas", "routes", "aggregations", "Mongoose" |
+| `ai-ocr-specialist` | "OCR", "Cohere", "Myanmar text" |
+
+**Manual (skills via slash command):**
+
+`/setup-env` `/db-seed` `/test-pipeline` `/code-review` `/extract-categorize-bill` `/upload-cloudinary-storage`
+
+---
+
+# Commands
 
 ```bash
-# ─── Development ───────────────────────────────────
+# ─── Development ───────────────────────────
+cd client && npm install    npm run dev       # Vite → :5173
+cd server && npm install    npm run dev       # Express → :5000
+cd server && node src/seed.js                 # Seed 12 test bills
 
-cd client && npm install         # Install frontend deps
-cd client && npm run dev         # Vite dev server → :5173
+# ─── Inside Claude Code ────────────────────
+/setup-env    /db-seed    /code-review
+/test-pipeline   /extract-categorize-bill   /upload-cloudinary-storage
 
-cd server && npm install         # Install backend deps
-cd server && npm run dev         # Express with --watch → :5000
-
-cd server && node src/seed.js    # Seed database with 12 test bills
-
-# ─── Skills (inside Claude Code) ───────────────────
-
-/setup-env                       # Configure all .env vars
-/db-seed                         # Seed test data
-/code-review                     # Anti-pattern scan
-/test-pipeline                   # End-to-end pipeline test
-/extract-categorize-bill         # Standalone Cohere classification
-/upload-cloudinary-storage       # Test Cloudinary upload only
-
-# ─── Agents (inside Claude Code) ───────────────────
-
-"Review my changes"              # → dispatches mern-reviewer
-"Debug the upload pipeline"      # → dispatches pipeline-debugger
-"Check the Mongoose schema"      # → dispatches backend-db-specialist
-"Tune the OCR prompt"            # → dispatches ai-ocr-specialist
-
-# ─── Self-Check ────────────────────────────────────
-
-grep -rn "useNewUrlParser\|useUnifiedTopology" server/src/   # Mongoose check
-grep -rn "cloudinary\.uploader\.upload" server/src/          # Cloudinary check
-grep -rn "content\[0\]\.text" server/src/                   # Cohere check
+# ─── Self-check before commit ──────────────
+grep -rn "useNewUrlParser\|useUnifiedTopology" server/src/
+grep -rn "cloudinary\.uploader\.upload" server/src/
+grep -rn "content\[0\]\.text" server/src/
 ```
 
 ---
 
-## Workflow — How It All Fits Together
+# Workflow — putting it together
 
 ```
-┌───────────── User Request ─────────────┐
-│ "Upload this bill image"                │
-└──────────────┬──────────────────────────┘
-               ▼
-┌───────────────────────────────────────────┐
-│    Superpowers SDD — Phase Methodology    │
-│  Context7 → resolve docs → implement      │
-└──────┬────────────────────────┬────────────┘
-       ▼                        ▼
-┌────────────────┐    ┌────────────────────┐
-│ Claude Code    │    │   Agent Dispatch   │
-│ (primary dev)  │───▶│ mern-reviewer      │
-│                │    │ pipeline-debugger  │
-│ Skills:        │    │ backend-db-spec    │
-│ /code-review   │    │ ai-ocr-spec        │
-│ /test-pipeline │    └────────────────────┘
-│ /db-seed       │              │
-└────────────────┘              ▼
-                      ┌────────────────────┐
-                      │  External MCPs     │
-                      │ Context7 (docs)    │
-                      │ 21st.dev (UI)      │
-                      │ MongoDB (DB)       │
-                      │ Chrome (screens)   │
-                      │ claude-mem (mem)   │
-                      └────────────────────┘
+User: "Upload this bill"
+        │
+        ▼
+┌───────────────────────────────┐
+│  SDD — Phase methodology      │
+│  Context7 → docs → implement  │
+└──────┬────────────────────────┘
+       │
+       ├──▶ Claude Code (dev)
+       ├──▶ Agent dispatch
+       │      ├─ mern-reviewer
+       │      ├─ pipeline-debugger
+       │      ├─ backend-db-specialist
+       │      └─ ai-ocr-specialist
+       │
+       └──▶ External MCPs
+              ├─ Context7 (docs)
+              ├─ 21st.dev (UI)
+              ├─ MongoDB (DB)
+              ├─ Chrome (screenshots)
+              └─ claude-mem (memory)
 ```
 
 ---
 
-## Git Workflow & Quality Gates
+# Quality gates
 
 ```
 main ← feature branches
 
 Every commit must pass:
-  ✅ 1. Context7 docs resolved before new library
-  ✅ 2. Anti-pattern grep returns nothing
-  ✅ 3. No .env, API keys, or service accounts committed
-  ✅ 4. try/catch on every async call
-  ✅ 5. Bills scoped to userId (no data leaks)
-  ✅ 6. Pipeline validation — reject amount=0 / Unknown Bill
-
-Pre-commit checklist (./CLAUDE.md):
-  grep -rn "useNewUrlParser\|upload(\|content\[0\]\.text" server/src/
-  # All must return nothing
+  ✅ Context7 docs resolved before new library
+  ✅ Anti-pattern grep returns nothing
+  ✅ No .env / API keys / service accounts
+  ✅ try/catch on every async call
+  ✅ All bills scoped to userId (no data leaks)
+  ✅ Pipeline validation — reject amount=0 / Unknown Bill
 ```
 
 ---
 
-<!-- _class: lead dark -->
+<!-- _class: lead -->
 
-## Summary
+# Summary
 
 <span class="tag-sm">Stack</span> MERN + Tesseract.js + Cohere + Cloudinary
-<span class="tag-sm">Agents</span> 4 specialized subagents (reviewer, debugger, backend, OCR/AI)
-<span class="tag-sm">Skills</span> 6 packaged workflows (setup, seed, test, review, extract, upload)
-<span class="tag-sm">Methodology</span> Superpowers Spec-Driven Development (SDD)
-<span class="tag-sm">MCP Tools</span> Context7 · 21st.dev · Chrome · MongoDB · claude-mem
+<span class="tag-sm">Agents</span> 4 specialized (reviewer, debugger, backend, OCR/AI)
+<span class="tag-sm">Skills</span> 6 packaged workflows
+<span class="tag-sm">Methodology</span> Superpowers Spec-Driven Development
+<span class="tag-sm">MCP</span> Context7 · 21st.dev · Chrome · MongoDB · claude-mem
 
 ---
 
