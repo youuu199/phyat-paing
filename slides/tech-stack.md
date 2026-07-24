@@ -18,17 +18,17 @@ size: 16:9
 section {
   background:var(--bg); color:var(--ink);
   font-family:'Inter','Noto Sans','Pyidaungsu',sans-serif;
-  font-size:28px; line-height:1.4; padding:60px 72px; font-weight:400;
+  font-size:22px; line-height:1.35; padding:44px 56px; font-weight:400;
 }
-h1 { color:var(--accent); font-weight:900; font-size:2em; line-height:1.05; letter-spacing:-.02em; }
-h2 { color:var(--ink); font-weight:700; font-size:1.35em; }
-h3 { color:var(--muted); font-weight:700; font-size:1.1em; }
+h1 { color:var(--accent); font-weight:900; font-size:1.7em; line-height:1.05; letter-spacing:-.02em; margin:.1em 0 .2em; }
+h2 { color:var(--ink); font-weight:700; font-size:1.2em; margin:.15em 0 .2em; }
+h3 { color:var(--muted); font-weight:700; font-size:1em; }
 strong { color:var(--accent); }
 a { color:var(--accent); text-decoration:none; }
-ul { font-weight:600; }
-code { background:var(--code); color:var(--accent); padding:.05em .3em; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:.85em; }
-pre  { background:var(--code); border:1px solid #222; border-radius:10px; padding:.6em 1em; }
-pre code { background:none; color:#fafafa; padding:0; font-size:.7em; line-height:1.5; }
+ul { font-weight:500; margin:.2em 0; }
+code { background:var(--code); color:var(--accent); padding:.05em .3em; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:.8em; }
+pre  { background:var(--code); border:1px solid #222; border-radius:8px; padding:.4em .8em; margin:.3em 0; }
+pre code { background:none; color:#fafafa; padding:0; font-size:.55em; line-height:1.35; }
 table {
   width: 100%;
   border-collapse: collapse;
@@ -50,16 +50,18 @@ tr:nth-child(even) td {
 }
 
 th, td {
-  padding: 10px 14px;
+  padding: 5px 10px;
   border: 1px solid #333;
+  font-size: .9em;
 }
 blockquote { border-left:5px solid var(--accent); color:var(--muted); padding:.3em .8em; margin:0; }
 header,footer,section::after { color:#525252; font-size:.5em; }
 section.cover { background:linear-gradient(135deg,#0a0a0a 0%, #1a1500 100%); }
-section.cover h1 { font-size:3.2em; }
+section.cover h1 { font-size:2.8em; }
 section.lead { background:#111; }
-section.lead h1 { font-size:3em; }
-section.lead h2 { font-size:1.6em; }
+section.lead h1 { font-size:2.4em; }
+section.lead h2 { font-size:1.3em; }
+section.lead p { font-size:1em; }
 .tag {
   display:inline-block; background:var(--accent); color:#0a0a0a;
   font-size:14px; font-weight:700; letter-spacing:.06em;
@@ -247,7 +249,7 @@ Output: {
 
 ---
 
-# Authentication & Security
+# Authentication
 
 **JWT in httpOnly cookies — XSS-safe by design.**
 
@@ -257,16 +259,27 @@ Login ──▶ Set-Cookie: token=<jwt>; httpOnly; Secure; SameSite=Lax
 Request ──▶ Cookie header ──▶ jwt.verify() ──▶ req.userId
 ```
 
-| Measure | Detail |
+| Feature | Detail |
 |---------|--------|
 | httpOnly Cookies | Token inaccessible to JavaScript — defeats XSS |
-| Authorization Header | Fallback for mobile/non-browser clients |
+| Auth Header | `Authorization: Bearer <token>` fallback for mobile |
+| Session | 7-day expiry, refreshed on each request |
+| Registration | Email + password with `validator.isEmail()` |
+
+---
+
+# Security
+
+| Measure | Detail |
+|---------|--------|
 | Account Lockout | 5 failed attempts → 15-minute lockout |
 | Rate Limiting | Auth: 20/15min · Upload: 10/min |
 | Helmet | Security headers (CSP, HSTS, X-Frame-Options) |
 | Password Policy | Min 8 chars, at least one number |
-| CORS | Strict origin in production |
-| Error Sanitization | Generic messages in production (no stack leaks) |
+| CORS | Strict origin validation in production |
+| Error Sanitization | Generic messages prod — no stack leaks |
+| Timeouts | 120s request timeout prevents hung connections |
+| Graceful Shutdown | SIGTERM/SIGINT closes DB + Tesseract workers |
 
 ---
 
