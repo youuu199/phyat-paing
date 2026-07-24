@@ -22,6 +22,18 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 // Initialize theme from localStorage immediately
 initTheme();
 
+// Analytics — GoatCounter (lightweight, privacy-first)
+function Analytics() {
+  React.useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://gc.zgo.at/count.js';
+    script.async = true;
+    script.setAttribute('data-goatcounter', 'https://phyat-paing.goatcounter.com/count');
+    document.head.appendChild(script);
+  }, []);
+  return null;
+}
+
 // Apply theme from global store
 function ThemeEffect() {
   const { theme } = useThemeStore();
@@ -171,6 +183,7 @@ function App() {
     <ToastProvider>
       <AuthProvider>
         <ThemeEffect />
+        <Analytics />
         <UploadProvider>
           <BrowserRouter>
             <ErrorBoundary>
