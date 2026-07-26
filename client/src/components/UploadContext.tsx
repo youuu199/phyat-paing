@@ -120,6 +120,12 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
   const clearDone = useCallback(() => {
     setJobs((prev) => {
+      // Revoke blob URLs for removed jobs to prevent memory leaks
+      prev
+        .filter((j) => j.stage === 'done' || j.stage === 'error')
+        .forEach((j) => {
+          if (j.preview.startsWith('blob:')) URL.revokeObjectURL(j.preview);
+        });
       const next = prev.filter((j) => j.stage !== 'done' && j.stage !== 'error');
       jobsRef.current = next;
       return next;
@@ -128,6 +134,8 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
 
   const removeJob = useCallback((id: string) => {
     setJobs((prev) => {
+      const removed = prev.find((j) => j.id === id);
+      if (removed?.preview.startsWith('blob:')) URL.revokeObjectURL(removed.preview);
       const next = prev.filter((j) => j.id !== id);
       jobsRef.current = next;
       return next;

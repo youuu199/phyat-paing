@@ -407,18 +407,16 @@ export default function BillsPage() {
     try {
       const res = await apiFetch(`/api/v1/bills/${id}/payment`, { method: 'PATCH' });
       if (res.ok) {
+        const updated = await res.json();
         setBills((prev) =>
-          prev.map((b) =>
-            b._id === id ? { ...b, isPaid: !b.isPaid, paidAt: !b.isPaid ? new Date().toISOString() : undefined } : b
-          )
+          prev.map((b) => (b._id === id ? { ...b, isPaid: updated.isPaid, paidAt: updated.paidAt } : b))
         );
-        const bill = bills.find((b) => b._id === id);
-        toast(bill?.isPaid ? 'Marked as unpaid' : 'Bill marked as paid! 🎉', 'success');
+        toast(updated.isPaid ? 'Bill marked as paid! 🎉' : 'Marked as unpaid', 'success');
       }
     } catch {
       toast('Failed to update payment status', 'error');
     }
-  }, [apiFetch, bills, toast]);
+  }, [apiFetch, toast]);
 
   const handleDelete = async (id: string) => {
     try {

@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import upload from '../middleware/upload.js';
 import auth from '../middleware/auth.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryStorage.js';
+import Bill from '../models/Bill.js';
 
 const router = Router();
 
@@ -66,6 +67,12 @@ router.delete('/', async (req, res, next) => {
 
     if (!publicId) {
       return res.status(400).json({ error: 'Query parameter "publicId" is required' });
+    }
+
+    // Ownership check: verify a bill with this image belongs to the requesting user
+    const bill = await Bill.findOne({ cloudinaryPublicId: publicId, userId: req.userId });
+    if (!bill) {
+      return res.status(404).json({ error: 'Image not found or access denied' });
     }
 
     await deleteFromCloudinary(publicId);

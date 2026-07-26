@@ -81,9 +81,10 @@ userSchema.methods.isLocked = function () {
 
 /**
  * Increment failed login attempts. Locks the account after 5 attempts for 15 minutes.
+ * Uses atomic MongoDB operations to prevent race conditions under concurrent requests.
  */
 userSchema.methods.incrementLoginAttempts = async function () {
-  // If lock has expired, reset attempts
+  // If lock has expired, reset attempts atomically
   if (this.lockUntil && this.lockUntil < Date.now()) {
     return this.updateOne({
       $set: { loginAttempts: 1 },
@@ -91,14 +92,17 @@ userSchema.methods.incrementLoginAttempts = async function () {
     });
   }
 
-  const updates = { $inc: { loginAttempts: 1 } };
+  // Always increment atomically — no read-then-write race
+  const result = await this.updateOne({ $inc: { loginAttempts: 1 } });
 
-  // Lock after 5 attempts for 15 minutes
-  if (this.loginAttempts + 1 >= 5) {
-    updates.$set = { lockUntil: Date.now() + 15 * 60 * 1000 }; // 15 minutes
-  }
+  // Re-read the updated value to decide if we should lock
+  // Use $gte to handle concurrent requests that all push past the threshold
+  await this.updateOne(
+    { loginAttempts: { $gte: 5 }, lockUntil: { $eq: null } },
+    { $set: { lockUntil: Date.now() + 15 * 60 * 1000 } }
+  );
 
-  return this.updateOne(updates);
+  return result;
 };
 
 /**

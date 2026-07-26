@@ -19,11 +19,8 @@ const connectDB = async () => {
         console.log('MongoDB disconnected');
       });
 
-      process.on('SIGINT', async () => {
-        await mongoose.connection.close();
-        console.log('MongoDB connection closed through app termination');
-        process.exit(0);
-      });
+      // SIGINT/SIGTERM handled by server.js gracefulShutdown()
+      // Do NOT register a handler here — it would exit before Tesseract workers are terminated
 
       return;
     } catch (err) {

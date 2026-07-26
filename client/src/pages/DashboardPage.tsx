@@ -202,10 +202,9 @@ export default function DashboardPage() {
     try {
       const res = await apiFetch(`/api/v1/bills/${id}/payment`, { method: 'PATCH' });
       if (res.ok) {
+        const updated = await res.json();
         setBills((prev) =>
-          prev.map((b) =>
-            b._id === id ? { ...b, isPaid: !b.isPaid, paidAt: !b.isPaid ? new Date().toISOString() : undefined } : b
-          )
+          prev.map((b) => (b._id === id ? { ...b, isPaid: updated.isPaid, paidAt: updated.paidAt } : b))
         );
       }
     } catch {
