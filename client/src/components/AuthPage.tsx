@@ -141,12 +141,12 @@ export default function AuthPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl">
+          <div className="flex bg-bg p-1 rounded-xl">
             <button
               onClick={() => { setMode('login'); resetForm(); }}
               className={`flex-1 h-9 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                 mode === 'login'
-                  ? 'bg-white dark:bg-bg text-text-primary font-semibold shadow-sm shadow-black/5'
+                  ? 'bg-bg-card text-text-primary font-semibold shadow-sm shadow-black/5'
                   : 'text-text-muted hover:text-text-secondary'
               }`}
             >
@@ -156,7 +156,7 @@ export default function AuthPage() {
               onClick={() => { setMode('register'); resetForm(); }}
               className={`flex-1 h-9 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                 mode === 'register'
-                  ? 'bg-white dark:bg-bg text-text-primary font-semibold shadow-sm shadow-black/5'
+                  ? 'bg-bg-card text-text-primary font-semibold shadow-sm shadow-black/5'
                   : 'text-text-muted hover:text-text-secondary'
               }`}
             >
@@ -171,7 +171,7 @@ export default function AuthPage() {
               <label className="text-[13px] font-medium text-text-primary">
                 Email
               </label>
-              <div className={`flex items-center px-3.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
+              <div className={`flex items-center px-3.5 bg-bg-card rounded-xl border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
                 <Mail className="w-[18px] h-[18px] text-text-muted" />
                 <input
                   type="email"
@@ -191,7 +191,7 @@ export default function AuthPage() {
               <label className="text-[13px] font-medium text-text-primary">
                 Password
               </label>
-              <div className={`flex items-center px-3.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
+              <div className={`flex items-center px-3.5 bg-bg-card rounded-xl border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
                 <Lock className="w-[18px] h-[18px] text-text-muted" />
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -205,7 +205,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                  className="p-1 hover:bg-bg-card rounded-lg transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="w-[18px] h-[18px] text-text-muted" />
@@ -222,7 +222,7 @@ export default function AuthPage() {
                 <label className="text-[13px] font-medium text-text-primary">
                   Confirm Password
                 </label>
-                <div className={`flex items-center px-3.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
+                <div className={`flex items-center px-3.5 bg-bg-card rounded-xl border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 gap-2 ${isMobile ? 'h-12' : 'h-11'}`}>
                   <Lock className="w-[18px] h-[18px] text-text-muted" />
                   <input
                     type="password"
